@@ -604,7 +604,7 @@ function showMBTIResult(mbti) {
             </div>
             <div class="result-quote">"${info.quote}"</div>
             <div class="dim-row">
-                ${[0,2,4,6].map(i => {
+                ${[0,1,2,3].map(i => {
                     const l = mbti[i];
                     return `<div class="dim-item"><div class="letter">${l}</div><div class="label">${dimLabels[l]}</div><div class="desc">${dimDescs[l]}</div></div>`;
                 }).join('')}
