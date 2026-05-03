@@ -214,6 +214,8 @@ body{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',serif;backgr
 </style>
 </head>
 <body>
+<script>window.__MINIMAX_API_KEY__ = "sk-cp-TlfRNKquwU1zNLJuGMWzxnD4CZ_S9kDboyVqza7H4YojW3IKduvm6zhMUIo-rAcTpA4Nb_ppGQMR72VhhcGmp10tScBFEY4vkIS-uX9W45osqUj4G1YLyK8";</script>
+
 <div id="app">
 
 <!-- ═══════════ HOME ═══════════ -->
@@ -1874,7 +1876,7 @@ var aiGenerating = false;
 function playAiHealing() {
     if (!aiApiKey) {
         aiApiKey = window.__MINIMAX_API_KEY__ || '';
-        if (!aiApiKey) { alert('请在 Netlify 后台设置 MINIMAX_API_KEY'); return; }
+        if (!aiApiKey) { return; }
     }
     if (aiGenerating) return;
     aiGenerating = true;
@@ -2170,86 +2172,6 @@ function initTheory() {
 initHome();
 </script>
 
-<script>
-// AI Healing Music v2
-var MINIMAX_API_KEY = window.__MINIMAX_API_KEY__ || localStorage.getItem('minimax_key') || '';
-var aiSelectedMood = '减压';
-var aiSelectedStyle = '民谣';
-var aiCurrentAudio = null;
 
-function setAIMood(el, mood) {
-    aiSelectedMood = mood;
-    document.querySelectorAll('#ai-mood-tags .btn').forEach(function(b){b.classList.remove('btn-primary')});
-    el.classList.add('btn-primary');
-}
-function setAIStyle(el, style) {
-    aiSelectedStyle = style;
-    document.querySelectorAll('#ai-style-tags .btn').forEach(function(b){b.classList.remove('btn-primary')});
-    el.classList.add('btn-primary');
-}
-function showAIGenModal() {
-    if (!MINIMAX_API_KEY) {
-        MINIMAX_API_KEY = window.__MINIMAX_API_KEY__ || '';
-        if (!MINIMAX_API_KEY) { alert('请在 Netlify 后台设置 MINIMAX_API_KEY'); return; }
-    }
-    document.getElementById('ai-gen-modal').style.display = 'flex';
-}
-function hideAIGenModal() {
-    document.getElementById('ai-gen-modal').style.display = 'none';
-}
-function generateAndPlayHealing() {
-    if (!MINIMAX_API_KEY) { showAIGenModal(); return; }
-    var statusEl = document.getElementById('ai-gen-status');
-    var btnEl = document.getElementById('ai-gen-btn');
-    if (!statusEl || !btnEl) return;
-    statusEl.style.display = 'block';
-    btnEl.disabled = true;
-    var moodPrompts = {
-        '助眠': '舒缓助眠，雨声，白噪音，深夜，月光，轻柔钢琴',
-        '减压': '放松减压，海浪，森林，风声，温暖，吉他',
-        '专注': '专注工作，咖啡馆，环境音，轻爵士，节奏平稳',
-        '疗愈': '心灵疗愈，钢琴，弦乐，温柔，治愈，悲伤释放',
-        '唤醒': '清晨唤醒，鸟鸣，晨光，轻快，自然，原声吉他'
-    };
-    var styleDesc = {
-        '电子': '电子音乐，赛博朋克，未来感，节奏感强',
-        '民谣': '民谣，木吉他，温暖，叙事感',
-        '古典': '古典音乐，钢琴，弦乐，优雅',
-        '国风': '古风，中国乐器，古筝，琵琶',
-        '爵士': '爵士乐，萨克斯，蓝调，慵懒'
-    };
-    var promptText = styleDesc[aiSelectedStyle] + '，' + moodPrompts[aiSelectedMood];
-    fetch('https://api.minimax.chat/v1/text_to_music', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + MINIMAX_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'music-02', prompt: promptText })
-    })
-    .then(function(res){ if(!res.ok) throw new Error('API错误，请检查Key'); return res.blob(); })
-    .then(function(blob) {
-        var url = URL.createObjectURL(blob);
-        if(aiCurrentAudio){ aiCurrentAudio.pause(); aiCurrentAudio=null; }
-        aiCurrentAudio = new Audio(url);
-        aiCurrentAudio.play();
-        var npTitle = document.getElementById('np-title');
-        var npTime = document.getElementById('np-time');
-        var nowPlaying = document.getElementById('music-now-playing');
-        if(npTitle) npTitle.textContent = '✨ '+aiSelectedMood+' · '+aiSelectedStyle;
-        if(npTime) npTime.textContent = 'AI疗愈音乐';
-        if(nowPlaying) nowPlaying.style.display = 'flex';
-        hideAIGenModal();
-        statusEl.style.display = 'none';
-        btnEl.disabled = false;
-        aiCurrentAudio.onended = function(){
-            if(npTitle) npTitle.textContent = '未在播放';
-            if(npTime) npTime.textContent = '点击开始';
-        };
-    })
-    .catch(function(e){
-        alert('生成失败：'+e.message);
-        statusEl.style.display = 'none';
-        btnEl.disabled = false;
-    });
-}
-</script>
 </body>
 </html>
