@@ -4,6 +4,12 @@
 
 MBTI/星座引导 × 6大场景 × AI角色倾听 × 匿名树洞 × 匿名社交 × 疗愈音乐
 
+## 一键部署到 Netlify
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/dechang64/dgy-treehole)
+
+> 将上面链接中的 `YOUR_USERNAME/dgy-treehole` 替换为你 fork 后的仓库地址
+
 ## 本地预览
 
 ```bash

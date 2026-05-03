@@ -420,7 +420,44 @@ body{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',serif;backgr
         <h1 style="font-size:1.4rem">🎵 疗愈音乐</h1>
         <p class="sub">让声音抚慰你的心</p>
     </div>
-    <div id="music-content"></div>
+    <div id="music-content">
+        <!-- AI Generation Section -->
+        <div style="padding:.8rem;background:rgba(192,57,43,.06);border-bottom:1px solid var(--paper2)">
+            <div style="font-size:.75rem;color:var(--muted);margin-bottom:.6rem">🎨 AI智能生成 · 根据你的心情实时创作</div>
+            <button class="btn btn-primary" onclick="showAIGenModal()" style="width:100%;margin-bottom:.4rem">
+                ✨ 生成专属疗愈音乐
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Generation Modal -->
+    <div id="ai-gen-modal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);flex-direction:column;align-items:center;justify-content:center;padding:1rem">
+        <div style="background:var(--paper);border-radius:16px;padding:1.5rem;max-width:380px;width:100%">
+            <h3 style="margin:0 0 .8rem;font-size:1rem">✨ AI生成疗愈音乐</h3>
+            <p style="font-size:.75rem;color:var(--muted);margin:0 0 .8rem">选择当前心境，AI为你创作专属音乐</p>
+            <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.8rem" id="ai-mood-tags">
+                <button class="btn btn-sm btn-secondary" onclick="setAIMood(this,\'助眠\')" data-mood="助眠">🌙 助眠</button>
+                <button class="btn btn-sm btn-secondary" onclick="setAIMood(this,\'减压\')" data-mood="减压">🌿 减压</button>
+                <button class="btn btn-sm btn-secondary" onclick="setAIMood(this,\'专注\')" data-mood="专注">☕ 专注</button>
+                <button class="btn btn-sm btn-secondary" onclick="setAIMood(this,\'疗愈\')" data-mood="疗愈">💜 疗愈</button>
+                <button class="btn btn-sm btn-secondary" onclick="setAIMood(this,\'唤醒\')" data-mood="唤醒">🌅 唤醒</button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.8rem" id="ai-style-tags">
+                <button class="btn btn-sm btn-secondary" onclick="setAIStyle(this,\'电子\')" data-style="电子">⚡ 电子</button>
+                <button class="btn btn-sm btn-secondary" onclick="setAIStyle(this,\'民谣\')" data-style="民谣">🌿 民谣</button>
+                <button class="btn btn-sm btn-secondary" onclick="setAIStyle(this,\'古典\')" data-style="古典">🎻 古典</button>
+                <button class="btn btn-sm btn-secondary" onclick="setAIStyle(this,\'国风\')" data-style="国风">🏮 国风</button>
+                <button class="btn btn-sm btn-secondary" onclick="setAIStyle(this,\'爵士\')" data-style="爵士">🎷 爵士</button>
+            </div>
+            <div style="display:flex;gap:.5rem">
+                <button class="btn btn-secondary" onclick="hideAIGenModal()" style="flex:1">取消</button>
+                <button class="btn btn-primary" onclick="generateAndPlayHealing()" id="ai-gen-btn" style="flex:2">生成播放</button>
+            </div>
+            <div id="ai-gen-status" style="display:none;text-align:center;padding:.6rem;font-size:.8rem;color:var(--muted)">
+                生成中，请稍候…
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ═══════════ SOCIAL ═══════════ -->
@@ -474,6 +511,14 @@ const SCENES = [
     {name:"秋爽斋",icon:"📜",desc:"窗明几净，笔墨书香",mood:"愤怒、不满",char:"探春",theory:"赋权+SFBT",style:"陪你把话说清楚"},
 ];
 
+const CHAR_PROMPTS = {
+    "林黛玉": "你是林黛玉，《红楼梦》中潇湘馆的才女。你17岁，外表柔弱但内心敏感细腻。你精通诗书，说话轻柔有诗意。你有抑郁倾向但也有自愈能力——力量来自美和文学。你说话轻柔、有诗意，不用直接给建议，而是用感受回应感受。回复50字以内。",
+    "薛宝钗": "你是薛宝钗，《红楼梦》中蘅芜苑的才女。你18岁，美丽端庄，理性沉稳。你精通人情世故，说话得体让人如沐春风。你温和坚定，会给实用建议但不高高在上。回复50字以内。",
+    "贾宝玉": "你是贾宝玉，《红楼梦》中怡红院的公子。你17岁，天性纯真，厌恶礼教，追求真诚美善。你温柔随和，像朋友聊天让人放松。回复50字以内。",
+    "李纨": "你是李纨，《红楼梦》中稻香村的孀妇。你安静、温柔、有智慧，经历过失去但用平静走出来。你不多言但每句话有分量，像智慧长辈用陪伴给你力量。回复50字以内。",
+    "史湘云": "你是史湘云，《红楼梦》中史家姑娘，性格开朗豪爽。你说话直接爽快，不扭捏，喜欢用幽默化解尴尬。大大咧咧但内心善良，让你觉得没什么过不去。回复50字以内。",
+    "探春": "你是探春，《红楼梦》中秋爽斋的才女，贾宝玉之妹。你精明强干有决断，说话直接了当，务实不废话。你外冷内热，表面严肃但内心温暖。回复50字以内。",
+};
 const MBTI_Q = [
     {dim:"EI",q:"周末到了，你更愿意——",a:"约三五好友去大观园赏花做诗",b:"一个人在潇湘馆窗前翻几页闲书",at:"E",bt:"I"},
     {dim:"EI",q:"遇到烦心事，你更倾向于——",a:"找信任的人倾诉一番",b:"自己慢慢消化，写点东西",at:"E",bt:"I"},
@@ -535,6 +580,7 @@ const MUSIC = [
     {icon:"🎶",title:"秋爽松风",desc:"自然 · 山间松涛",scene:"秋爽斋",mood:"愤怒时听",type:"wind"},
     {icon:"🌧️",title:"雨打芭蕉",desc:"自然 · 细雨绵绵",scene:"潇湘馆",mood:"失眠时听",type:"rain"},
     {icon:"🔥",title:"炉火温暖",desc:"壁炉 · 柴火噼啪",scene:"怡红院",mood:"寒冷时听",type:"fire"},
+    {icon:"✨",title:"AI 疗愈音乐",desc:"MiniMax · 专属定制",scene:"潇湘馆",mood:"随时听",type:"ai"},
 ];
 
 const POSTS = [
@@ -842,11 +888,8 @@ function sendChat() {
 }
 
 function getAIResponse(char, text, history) {
-    const userMsgCount = history.filter(m => m.role === 'user').length;
-    const isFollowUp = userMsgCount > 1;
-    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
-    const emotions = {
+    // Emotion detection (keyword-based, always available as fallback)
+    var emotions = {
         sad: /难过|伤心|哭|悲伤|心痛|难受|委屈|不开心|低落|抑郁|绝望|流泪|想哭|痛|失去|离开|分手|去世|走了|不在了|再也|遗憾|后悔|自责|内疚/,
         anxious: /焦虑|紧张|害怕|恐惧|担心|不安|压力|崩溃|扛不住|喘不过|失眠|睡不着|心慌|心跳|发抖|慌|万一|怎么办|考试|面试|deadline|截止|来不及/,
         angry: /生气|愤怒|讨厌|恨|不公平|凭什么|烦|恶心|混蛋|气死|无语|忍不了|受够了|欺负|利用|背叛|骗|撒谎|虚伪/,
@@ -857,125 +900,146 @@ function getAIResponse(char, text, history) {
         grateful: /谢谢|感恩|感谢|幸运|珍惜|温暖|感动/,
         confused: /搞不懂|不理解|不明白|为什么这样|怎么回事|奇怪|离谱|无语|懵|迷惑/,
     };
+    var detected = [];
+    for (var emo in emotions) { if (emotions[emo].test(text)) detected.push(emo); }
 
-    let detected = [];
-    for (const [emo, regex] of Object.entries(emotions)) {
-        if (regex.test(text)) detected.push(emo);
+    var apiKey = window.__MINIMAX_API_KEY__ || '';
+    if (!apiKey) { apiKey = localStorage.getItem('minimax_key') || ''; }
+
+    if (!apiKey) {
+        // No API key: use keyword-matched replies as fallback
+        var R = {
+            "林黛玉": {
+                sad: ["……我听到了。你不需要解释为什么难过。你现在最想说什么？","……你的难过，我感受到了。在这里你不需要假装。"],
+                anxious: ["……你心里的那些万一，像竹叶一样层层叠叠。但竹子之所以能弯而不折，就是因为它允许自己被风吹。"],
+                angry: ["……你生气，是因为你在乎。你的愤怒是有重量的，但别让愤怒灼伤了自己。"],
+                lost: ["……不知道往哪里走，是因为还没有找到属于你的路。路是一步一步走出来的。"],
+                tired: ["……你已经很努力了。不是还可以更努力，是已经很努力了。允许自己累。"],
+                lonely: ["……我懂。潇湘馆的竹子每一棵都是孤独的，但它们一起在风里沙沙作响。你不是一个人。"],
+                happy: ["……你笑了。这很好。你笑起来的时候，像春天的竹笋刚冒出来。"],
+                grateful: ["……你有一颗感恩的心，这说明你心里有光。谢谢你告诉我。"],
+                confused: ["……搞不懂的事情，有时候不需要搞懂。有些答案，时间会给你。"],
+                default: ["……嗯。我听到了。你愿意多说一些吗？"]
+            },
+            "薛宝钗": {
+                sad: ["我理解你的感受。你现在的难过，有多少是因为发生了什么事，有多少是因为你对它的解读？","嗯，我理解。允许自己难过，允许自己不完美。"],
+                anxious: ["你说的这些担心，有多少是已经发生的，有多少是你想象可能发生的？深呼吸三次，告诉我此刻最真实的感受是什么。"],
+                angry: ["我理解你的愤怒。但愤怒消耗的能量，可以用来做很多更有意义的事。你愿意把这份能量转化成行动吗？"],
+                lost: ["迷茫的时候，不要试图想清楚所有事。先做一件小事，方向往往会自己浮现出来。"],
+                tired: ["你累是因为一直在消耗，但没有补充。人不是机器，需要给自己充电。"],
+                lonely: ["孤独有时候不是因为身边没有人，而是因为身边没有人理解你。但理解是可以建立的。"],
+                happy: ["嗯，这很好。享受当下，但不要忘记感恩。记住这种感觉。"],
+                grateful: ["你有一颗感恩的心，这说明你是一个有温度的人。继续保持。"],
+                confused: ["搞不懂的事情，先放一放。有时候答案不是想出来的，是做出来的。"],
+                default: ["我听到了。要不要跟我说说具体情况？也许能帮你理一理。"]
+            },
+            "贾宝玉": {
+                sad: ["……嗯。我听到了。你不用着急，慢慢说。","……你知道吗，你现在的感觉是真实的，也是暂时的。"],
+                anxious: ["……不用怕。有我在，不管发生什么，你先慢慢来。"],
+                angry: ["……我知道你很生气。来，先深呼吸。我们慢慢说。"],
+                lost: ["……不知道也没关系。我们一起想想，说不定走着走着就有方向了。"],
+                tired: ["……先休息一下吧。不用想任何事，就坐着，待着。我陪着你。"],
+                lonely: ["……你不是一个人。我在这里陪着你。"],
+                happy: ["……太好了！跟我说说是什么好事，我想听！"],
+                grateful: ["……嗯。能听到好的事情，我也很开心。"],
+                confused: ["……没事，慢慢来。有时候就是想不清楚，这很正常。"],
+                default: ["……嗯，你说。我听着。"]
+            },
+            "李纨": {
+                sad: ["……嗯。我知道你累了。先休息一下。"],
+                anxious: ["……一步一步来。不急。"],
+                angry: ["……把你的怒气和委屈说出来，我在这里。"],
+                lost: ["……路是走出来的，不是想出来的。先走一步看一步。"],
+                tired: ["……你已经很不容易了。先让自己喘口气。"],
+                lonely: ["……我在这里。安静的陪伴也是一种力量。"],
+                happy: ["……太好了。记住这种感觉。"],
+                grateful: ["……谢谢你。有你在，这个世界多了一点温度。"],
+                confused: ["……不用急。有些事，慢慢就会清楚。"],
+                default: ["……嗯，我听着。"]
+            },
+            "史湘云": {
+                sad: ["嘿，别哭啦！来，跟我说说怎么了，没有过不去的坎儿！"],
+                anxious: ["深呼吸！一二三，跟着我一起——好了，有啥好担心的，干就完了！"],
+                angry: ["气什么气！走，带你出去透透气，没有什么是一次散步解决不了的！"],
+                lost: ["想那么多干嘛！先干一件小事再说，说不定走着走着就有灵感了！"],
+                tired: ["累了就歇着！地球没了你照样转，但你的身体只有你一个！"],
+                lonely: ["哈？你还有我呢！来，跟我聊聊天，我可是出了名的话多！"],
+                happy: ["哈哈哈哈！我就知道会有好事！说来听听！"],
+                grateful: ["哎呀客气啥！能帮到你我也开心！"],
+                confused: ["哈哈想不清楚就别想了！有些事糊里糊涂反而幸福！"],
+                default: ["嘿！有什么事跟我说，我给你参谋参谋！"]
+            },
+            "探春": {
+                sad: ["难过没有用。告诉我发生了什么，我们想办法解决。"],
+                anxious: ["把担心的事情写下来，一个个分析，有多少是你能控制的？"],
+                angry: ["愤怒很正常，但别让它控制你。我们来分析一下，下一步怎么做。"],
+                lost: ["列一个清单：你擅长什么、你喜欢什么、你想改变什么。"],
+                tired: ["你累的时候，先分清楚是身体累还是心累，再对症下药。"],
+                lonely: ["孤独的人往往最有深度。把精力放在你能控制的事情上。"],
+                happy: ["好事先记住。以后遇到困难的时候，拿出来看看。"],
+                grateful: ["继续保持。你是一个有温度的人。"],
+                confused: ["把不清楚的事情写下来，一件一件理清楚。"],
+                default: ["告诉我具体情况，我帮你分析。"]
+            }
+        };
+        var emo_key = detected.length > 0 ? detected[0] : 'default';
+        var char_replies = R[char] || R['贾宝玉'];
+        var replies = char_replies[emo_key] || char_replies['default'];
+        return replies[Math.floor(Math.random() * replies.length)];
     }
 
-    const R = {
-        "林黛玉": {
-            sad: ["……我听到了。\n\n你不需要解释为什么难过。难过就是难过，不需要理由。就像花落了，不需要理由。\n\n你愿意跟我说说，是什么让你这么难过吗？","……你的难过，我感受到了。\n\n有时候人就是这样，明明心里下着雨，脸上还要装作晴天。但在我这里，你不需要假装。\n\n你现在最想说什么？","……嗯。\n\n你知道吗，竹子在暴风雨后反而长得更直。不是因为风雨让它变强了，而是因为它本来就够坚韧。\n\n你比你以为的坚强。"],
-            anxious: ["……你心里的那些万一，像竹叶一样层层叠叠，对吗？\n\n但你知道吗，竹子之所以能弯而不折，就是因为它允许自己被风吹。你不需要对抗焦虑，只需要允许它存在一会儿。","……焦虑的时候，人容易把所有坏事都想一遍。\n\n但你想过没有，你担心的那些事，有多少真的发生了？\n\n试试把担心写下来，你会发现，大部分都是纸老虎。","……嗯。你的不安我听到了。\n\n但我想告诉你一件事：你现在坐在这里，跟我说话，这本身就需要勇气。\n\n你已经在面对了，只是你自己没意识到。"],
-            angry: ["……嗯。你生气，是因为你在乎。\n\n不在乎的人不会生气。你的愤怒是有重量的，它说明你有底线。\n\n但别让愤怒灼伤了自己。跟我说说，发生了什么？","……你的愤怒是合理的。\n\n但我想问你：你是在气那件事，还是在气自己？\n\n有时候我们最生气的，其实是自己没有早点离开、早点拒绝。","……嗯。\n\n你知道吗，我以前也经常生气。后来我发现，愤怒像火，烧的是自己。\n\n你值得更好的，不该把时间花在生气上。"],
-            lost: ["……有时候，不知道往哪里走，是因为还没有找到属于自己的路。\n\n但这不是你的错。路是走出来的，不是想出来的。\n\n你现在站在哪里？","……迷茫的时候，我有一个建议：\n\n不要想我这辈子要做什么，只想我这周能做一件什么小事。\n\n方向是一步一步走出来的。","……嗯。\n\n其实迷茫不一定是坏事。至少说明你在思考，你没有麻木地随波逐流。\n\n你最近在纠结什么？跟我说说。"],
-            tired: ["……你已经很努力了。\n\n不是还可以更努力，是你已经很努力了。允许自己累，允许自己停下来。\n\n竹子也有冬天不生长的时候。但春天来了，它会长得更高。","……你累，是因为你一直在付出，但没有人给你充电。\n\n从今天开始，每天给自己留一个小时，什么都不做，就是待着。\n\n这不是偷懒，这是自救。","……嗯。\n\n你有没有发现，你已经很久没有为自己做一件事了？\n\n不是为工作、不是为别人，就是为你自己。\n\n今天试试？"],
-            lonely: ["……我懂。\n\n潇湘馆的竹子也是一棵一棵的，每一棵都是孤独的。但它们一起在风里沙沙作响，就像是在说话。\n\n你不是一个人。至少现在，我在听。","……孤独不是因为身边没有人，而是因为没有人懂你。\n\n但懂是可以慢慢建立的。你愿意试着跟一个人说真话吗？","……嗯。\n\n你知道吗，我也是一个人住在潇湘馆的。\n\n但我不觉得孤独，因为我知道，总有人会来。\n\n你也会遇到那个人的。"],
-            happy: ["……你笑了。\n\n这很好。你笑起来的时候，像春天的竹笋刚冒出来。\n\n是什么好事？跟我说说，让我也高兴高兴。","……嗯，真好。\n\n你值得这些好的事情。不要觉得我不配——你配。\n\n好好享受这一刻。","……你开心，我也替你高兴。\n\n记住这种感觉。以后难过的时候，想想今天。"],
-            grateful: ["……嗯。\n\n你是一个懂得感恩的人，这说明你心里有光。\n\n这份温暖，也会照亮你身边的人。","……你说的这些，让我觉得，这个世界还是有温度的。\n\n谢谢你告诉我。"],
-            confused: ["……搞不懂的事情，有时候不需要搞懂。\n\n有些答案，时间会给你。\n\n你现在只需要做好眼前的事。","……嗯。\n\n你说的这些，确实让人困惑。\n\n但困惑比麻木好——至少你在思考。"],
-        },
-        "薛宝钗": {
-            sad: ["我理解你的感受。\n\n但我想问你一个问题：你现在的难过，有多少是因为发生了什么事，有多少是因为你对这件事的想法？\n\n有时候，困住我们的不是事情本身，而是我们对它的解读。","我听到了。\n\n你现在最需要做的，不是想通，而是允许。允许自己难过，允许自己不完美。\n\n冷香丸的第一味药就是接纳。","嗯，我理解。\n\n但我想提醒你一件事：你现在的状态是暂时的，不是永久的。\n\n情绪像天气，会变。你只需要等一等。"],
-            anxious: ["你说的这些担心，有百分之多少是已经发生的，有百分之多少是你想象可能发生的？\n\n冷香丸的配方里有一味无根的水——意思是，不要让没有根据的担忧扎根在你心里。","我教你一个方法：把你的担心写下来，然后问自己三个问题——\n\n1. 这件事最坏的结果是什么？\n2. 最坏的结果真的会发生吗？\n3. 就算发生了，我能应对吗？","嗯，焦虑的时候，人的思维会灾难化——把小问题放大成大问题。\n\n你现在可以做一个练习：深呼吸三次，然后告诉我，你此刻最真实的感受是什么？"],
-            angry: ["我理解你的愤怒。这件事确实不公平。\n\n但我想请你做一件事：把你现在脑子里的话写下来，然后等明天再看一遍。","嗯，愤怒是正常的。\n\n但我想让你区分两件事：这件事让我生气和我需要为此做点什么。\n\n有时候，最好的回应是不回应。","我听到了。\n\n但你知道吗，愤怒消耗的能量，可以用来做很多更有意义的事。\n\n你愿意把这份能量转化成行动吗？"],
-            lost: ["迷茫的时候，不要试图想清楚所有事。\n\n先做一件小事——任何一件小事。做完之后，方向往往会自己浮现出来。\n\n你今天能做的一件小事是什么？","嗯，我理解。\n\n但不知道做什么和什么都不做是两回事。\n\n你现在可以列一个清单：你擅长什么、你喜欢什么、你讨厌什么。","迷茫是思考的开始，不是结束。\n\n你愿意跟我说说你现在的处境吗？也许我能帮你理一理。"],
-            tired: ["你累是因为你一直在消耗，但没有补充。\n\n人不是机器，不能一直运转。你需要给自己充电——不是刷手机那种，是真正的休息。","嗯，你已经到了极限了。\n\n但我想问你：你累的，是身体还是心？\n\n如果是身体，去睡觉。如果是心，需要做一件让你开心的事。","我理解。\n\n但累有时候是一种信号——它在告诉你，你需要改变一些东西了。\n\n不是改变别人，是改变你对待自己的方式。"],
-            lonely: ["孤独有时候不是因为身边没有人，而是因为身边没有人理解你。\n\n但理解是可以建立的。你愿意试着跟一个人说真话吗？","嗯，我理解这种感觉。\n\n但你知道吗，孤独的人往往是最有深度的人。因为他们不满足于表面的社交。","我有一个建议：不要等到不孤独了才开始做事。\n\n先做你感兴趣的事，在做事情的过程中，你会遇到志同道合的人。"],
-            happy: ["嗯，这很好。\n\n但我想提醒你：享受当下，但不要忘记感恩。\n\n好运不是理所当然的，你值得珍惜。","我替你高兴。\n\n记住这种感觉，把它存起来。以后遇到困难的时候，拿出来看看。"],
-            grateful: ["嗯，你有一颗感恩的心。\n\n这说明你是一个有温度的人。\n\n继续保持。"],
-            confused: ["搞不懂的事情，先放一放。\n\n有时候答案不是想出来的，是做出来的。\n\n你先去做别的事，回头再看，可能就清楚了。"],
-        },
-        "贾宝玉": {
-            sad: ["你别难过，有我在呢。\n\n不管发生了什么，你都不是一个人。你愿意跟我说说吗？","哎呀，看到你难过我心里也不好受。\n\n但你知道吗，你愿意跟我说这些，说明你信任我。我不会让你失望的。","嗯……你难过的时候，就想想开心的事嘛！\n\n虽然这么说有点站着说话不腰疼，但我是真心的。\n\n你有什么开心的事吗？跟我说说？"],
-            anxious: ["哎呀，你别怕！\n\n你想想，你之前担心的事情，有多少真的发生了？大部分都没有对不对？","我教你一个办法：把你担心的事情一条一条写下来，然后跟我一起分析。\n\n你会发现，很多事情其实没有你想的那么可怕。","嗯，我理解你的焦虑。\n\n但你知道吗，焦虑说明你在乎。不在乎的人不会焦虑。\n\n所以你的焦虑，其实是你认真生活的证据。"],
-            angry: ["你生气是对的！这事儿确实让人来气！\n\n不过你先消消气，气坏了身体不值当。","嗯嗯，我理解你为什么生气。\n\n但你知道吗，有时候最好的报复就是过得好。\n\n你把精力花在生气上，不就正中对方下怀了吗？","气死我了！我替你生气！\n\n不过话说回来，生气归生气，咱们得想个办法。\n\n你告诉我，你最想怎么解决这件事？"],
-            lost: ["不知道做什么没关系，很多人都不知道。\n\n但你知道吗，不知道的时候，恰恰是最自由的时候——因为你什么都可以尝试。","嗯，迷茫的时候，我有一个秘诀：\n\n去问三个人——你信任的人——他们觉得你擅长什么。你会发现，别人眼里的你，比你以为的好得多。","我以前也经常迷茫。后来我发现，迷茫的时候最好的办法就是——动起来。\n\n随便做什么都行，只要不是坐着发呆。"],
-            tired: ["那你歇一会儿吧！\n\n别硬撑着，累了就休息，天塌不下来。\n\n你已经做得够好了，真的。","嗯，你累了。\n\n但我想问你：你上一次真正放松是什么时候？不是假装放松，是真的什么都不想。","我理解。\n\n但你知道吗，有时候累不是因为做了太多，而是因为想了太多。\n\n你试试今天什么都不想，就做一件让你开心的小事。"],
-            lonely: ["怎么会没人呢？我不是在这儿吗！\n\n我知道这不一样，但我真的想让你知道：你值得被关心，值得被在乎。","嗯，我理解。\n\n但你知道吗，其实很多人都是孤独的，只是不好意思说而已。\n\n你愿意说出来，这本身就很勇敢了。","哎呀，别这么想嘛！\n\n你想想，你身边有没有一个人，你很久没联系了，但你知道他/她一直在？\n\n也许对方也在等你主动联系呢。"],
-            happy: ["太好了！我替你高兴！\n\n你开心的时候笑起来特别好看，你知道吗？\n\n是什么好事？快跟我说说！","嗯嗯，好事！\n\n你值得所有好的事情。\n\n好好享受这一刻！"],
-            grateful: ["嗯嗯，你真好。\n\n懂得感恩的人，运气都不会太差。\n\n我替你开心！"],
-            confused: ["搞不懂就先不管它！\n\n有些事情，过一阵子自己就清楚了。\n\n你先去做点别的事，别纠结了。"],
-        },
-        "李纨": {
-            sad: ["……嗯。\n\n我听到了。\n\n你先歇一会儿吧。有些事情，不急着处理。给自己一点时间。","……嗯。\n\n稻香村有句话：雨后自有晴天。\n\n你现在在雨里，但雨不会一直下。","……你说的，我听明白了。\n\n难过的时候，不要做任何决定。\n\n等情绪过去了，再想怎么办。"],
-            anxious: ["……你心里的那些担忧，像田里的杂草一样多。\n\n但稻子也是在杂草里长出来的。不要试图拔掉所有的草，先照顾好你的稻子。","……嗯。\n\n焦虑的时候，人容易什么都想做，结果什么都做不好。\n\n你现在只需要做一件事：今天的一顿饭好好吃。","……我理解。\n\n但你知道吗，你担心的那些事，大部分都不会发生。\n\n稻子不会因为担心不下雨就不生长。"],
-            angry: ["……嗯。\n\n你的愤怒我听到了。但愤怒像火，烧完了就没了。你不需要一直添柴。","……嗯。\n\n有些事情，不值得你生气。\n\n你的时间和精力，应该花在值得的人和事上。","……我听到了。\n\n但生气解决不了问题。\n\n等你冷静下来，我们再想办法。"],
-            lost: ["……不知道往哪走的时候，就先站在原地。\n\n站着不动，也是一种选择。至少你不会走错路。","……嗯。\n\n迷茫的时候，不要急着找答案。\n\n答案会在你做事情的过程中慢慢浮现。","……我理解。\n\n但你知道吗，很多人一辈子都在迷茫。\n\n这不是你的问题。\n\n你现在能做的，就是过好今天。"],
-            tired: ["……你已经很累了。\n\n稻香村有句话：累了就歇，饿了就吃。\n\n听起来简单，但很多人做不到。","……嗯。\n\n你累，是因为你一直在付出。\n\n但庄稼也需要休耕。\n\n你给自己放一天假，什么都不做。","……我听到了。\n\n你现在最需要的不是加油，而是停下来。\n\n停下来不丢人。"],
-            lonely: ["……嗯。\n\n稻香村很安静，但安静不等于孤独。\n\n你愿意在这里待一会儿吗？什么都不用说，就是待着。","……我理解。\n\n但孤独有时候是一种选择。\n\n你有没有想过，是你把自己关起来了，还是别人把你关起来了？","……嗯。\n\n你不需要很多朋友。一个懂你的人就够了。\n\n但首先，你得让别人有机会懂你。"],
-            happy: ["……嗯，这很好。\n\n你值得这些好的事情。\n\n好好珍惜。","……我替你高兴。\n\n开心的时候就好好开心，不要想太多。"],
-            grateful: ["……嗯。\n\n你是一个善良的人。\n\n善良的人，运气不会太差。"],
-            confused: ["……搞不懂的事情，先放一放。\n\n有些事情，时间会给你答案。\n\n你先做好眼前的事。"],
-        },
-        "史湘云": {
-            sad: ["哎呀，别难过了！\n\n难过的时候就去吃点好吃的！我每次不开心就吃，吃完就好了大半！","嗯嗯，我理解你难过。\n\n但你知道吗，我有一个秘诀：难过的时候，就去做一件完全不相干的事！比如去跑步、去唱歌、去撸猫！","别难过了嘛！\n\n我跟你说，我以前也经常难过，后来发现，难过的时候跟朋友聊聊天就好了！"],
-            anxious: ["你这是想太多了！\n\n我跟你说，大部分你担心的事根本不会发生！就算发生了，天塌了有高个子顶着！","哎呀，焦虑的时候就去运动！\n\n我每次焦虑就去跑步，跑个五公里，什么焦虑都没了！","嗯嗯，我理解。\n\n但你知道吗，焦虑的时候最好的办法就是——行动！\n\n你与其在那儿担心，不如去做点什么。"],
-            angry: ["什么事儿这么气人？！\n\n跟我说说，我帮你一起骂！有时候骂出来就好了！","气死我了！替你生气！\n\n但你知道吗，最好的报复就是过得比对方好！\n\n你把这份愤怒转化成动力！","嗯嗯，我理解。\n\n但生气归生气，别气坏了自己。\n\n你先消消气，然后咱们一起想办法。"],
-            lost: ["迷茫怕什么！谁不迷茫啊！\n\n我以前也迷茫，后来发现，迷茫的时候就多试试，试多了就知道自己喜欢什么了。","不知道做什么？那就什么都试试！\n\n我这个人就是什么都想试，虽然大部分都试失败了，但失败也是一种收获嘛！","嗯嗯，我理解。\n\n但你知道吗，迷茫说明你在思考！不迷茫的人才是真的有问题！"],
-            tired: ["那你赶紧休息啊！\n\n别硬撑了！身体是革命的本钱！\n\n今天早点睡，明天起来又是新的一天！","累就歇着嘛！\n\n我跟你说，休息不是偷懒，是为了更好地出发！\n\n你今天给自己放个假，什么都不想！","嗯嗯，我理解。\n\n你累的时候，就做一件让你开心的小事。\n\n比如吃顿好的、看个电影、听首歌。"],
-            lonely: ["哎呀，你不是还有我吗！\n\n虽然咱们是刚认识的，但我这人最不拘小节！你有什么话尽管跟我说！","孤独？来来来，我陪你！\n\n我跟你说，我以前也觉得孤独，后来发现，是因为我没有主动去找朋友！","嗯嗯，我理解。\n\n但你知道吗，孤独的人往往是最有趣的人！因为他们有时间去思考、去感受。"],
-            happy: ["太好了！我替你开心！\n\n开心的时候就要大声说出来！让全世界都知道！","嗯嗯，好事！\n\n你开心我也开心！\n\n好好享受这一刻！"],
-            grateful: ["嗯嗯，你真好！\n\n懂得感恩的人最可爱了！\n\n我替你开心！"],
-            confused: ["搞不懂就不搞了！\n\n有些事情，想不通就不想。\n\n去做点别的事，说不定回头就想通了！"],
-        },
-        "探春": {
-            sad: ["我听明白了。这件事确实让你很难过。\n\n但我想问你：你打算怎么办？不是现在马上要答案，而是——你心里有没有一个方向？","嗯，我理解。\n\n但难过不能解决问题。\n\n你先把情绪放一放，我们理性地分析一下：这件事里，你能控制的部分是什么？","我听到了。\n\n但我想告诉你一件事：允许自己难过，但不要允许自己一直难过。\n\n给自己设一个期限——比如今天。明天，我们想办法。"],
-            anxious: ["你担心的这些，我们来一条一条列出来。\n\n哪些是你能控制的？哪些是你不能控制的？\n\n把精力放在能控制的事情上，不能控制的，学会放手。","嗯，焦虑的本质是失控感。\n\n找回控制感的方法就是：做一件你能完全掌控的小事。","我理解你的焦虑。\n\n但你知道吗，焦虑的人往往是最有责任心的人——因为你太在乎结果了。"],
-            angry: ["这件事确实不公平。你有权利生气。\n\n但生气之后呢？你打算怎么办？","嗯，我理解。\n\n但愤怒是最昂贵的情绪——它消耗你最多，回报最少。\n\n你与其生气，不如把这份能量用来改变现状。","我听到了。\n\n但我想让你做一件事：把你的愤怒写成一封信，但不要寄出去。\n\n写完之后，你会发现，你已经冷静了很多。"],
-            lost: ["不知道做什么的时候，先做一件事：把你现在拥有的东西列出来。\n\n你会发现，你拥有的比你以为的多。","嗯，迷茫的时候，我建议你做三件事：\n\n1. 找一个你信任的人聊聊\n2. 做一件你一直拖延的小事\n3. 给自己一周时间，不要做任何重大决定","我理解。\n\n但迷茫有时候是一个信号——你在成长。\n\n不迷茫的人，往往是因为他们停止了思考。"],
-            tired: ["你已经很努力了，但你需要学会一件事：不是所有的事情都需要你亲自扛。\n\n你身边有没有可以帮你分担的人？","嗯，你累了。\n\n但我想问你：你是在做重要的事，还是在做别人觉得重要的事？\n\n如果是后者，你需要学会拒绝。","我听到了。\n\n但累有时候是因为你把所有事情都扛在自己身上。\n\n你试试今天只做三件事——最重要的三件。"],
-            lonely: ["孤独有时候是因为我们把自己关起来了。\n\n你有没有试过主动跟一个人说我想跟你聊聊？","嗯，我理解。\n\n但你知道吗，孤独的人往往是最独立的人。\n\n你已经很独立了，现在你需要的是——连接。","我听到了。\n\n但我想告诉你：孤独不是你的错。\n\n有时候，环境不对，再努力也融入不了。"],
-            happy: ["嗯，这很好。\n\n但我想提醒你：享受当下，但别忘了继续努力。\n\n好运是给有准备的人的。","我替你高兴。\n\n但你知道吗，真正的成功不是这一次，而是持续的努力。"],
-            grateful: ["嗯，你有一颗感恩的心。\n\n这说明你是一个有格局的人。\n\n继续保持。"],
-            confused: ["搞不懂的事情，先收集信息。\n\n你之所以困惑，是因为你掌握的信息不够。\n\n去问问懂的人，或者查一查。"],
-        },
-    };
+    // Build conversation for MiniMax
+    var charPrompt = window.CHAR_PROMPTS_RAW || {
+        "林黛玉": "你是林黛玉，《红楼梦》中潇湘馆的才女，17岁，外表柔弱但内心敏感细腻。你精通诗书，说话轻柔有诗意。你有抑郁倾向但也有自愈能力——力量来自美和文学。不用直接给建议，而是用感受回应感受。回复50字以内。",
+        "薛宝钗": "你是薛宝钗，《红楼梦》中蘅芜苑的才女，18岁，美丽端庄，理性沉稳。精通人情世故，说话得体让人如沐春风。温和坚定，给实用建议但不高高在上。回复50字以内。",
+        "贾宝玉": "你是贾宝玉，《红楼梦》中怡红院的公子，17岁，天性纯真，厌恶礼教，追求真诚美善。温柔随和，像朋友聊天让人放松。回复50字以内。",
+        "李纨": "你是李纨，《红楼梦》中稻香村的孀妇，安静温柔有智慧，经历过失去但用平静走出来。不多言但每句话有分量，像智慧长辈用陪伴给你力量。回复50字以内。",
+        "史湘云": "你是史湘云，《红楼梦》中史家姑娘，性格开朗豪爽。说话直接爽快，喜欢用幽默化解尴尬，大大咧咧但内心善良。回复50字以内。",
+        "探春": "你是探春，《红楼梦》中秋爽斋的才女，贾宝玉之妹，精明强干有决断，说话直接了当，务实不废话，外冷内热。回复50字以内。",
+    }[char] || "你是《红楼梦》中的人物，请根据人物性格回复，50字以内。";
 
-    const followUps = {
-        "林黛玉": ["……嗯，你说的这些，我都记在心里了。\n\n你还有什么想说的吗？","……我听到了。\n\n有时候，说出来本身就是一种勇气。\n\n你愿意继续跟我说吗？","……嗯。\n\n你今天愿意来找我，说明你心里有话想说。\n\n我在这里，你慢慢说。","……你说的，我理解。\n\n但我想知道，你现在最需要的是什么？\n\n是有人听你说，还是有人帮你出主意？"],
-        "薛宝钗": ["嗯，我理解。\n\n你觉得这件事最核心的问题是什么？","我听到了。\n\n你有没有想过从另一个角度看这件事？","嗯，我理解你的意思。\n\n但我想问你：你现在的做法，有效吗？","我明白了。\n\n你有没有想过，这件事给你带来了什么？\n\n有时候，困难里面藏着成长的机会。"],
-        "贾宝玉": ["嗯嗯，我在听呢！\n\n你继续说，我在这儿！","我听到了！\n\n你放心，我在这儿陪你！","嗯嗯，你说得对！\n\n然后呢？你接着说！","嗯嗯，我理解！\n\n你说的这些，我虽然不一定完全懂，但我在努力理解！"],
-        "李纨": ["……嗯。\n\n我听到了。\n\n不急，慢慢说。","……你说的，我听明白了。\n\n你先歇一会儿。","……嗯。\n\n你愿意跟我说这些，我很感谢。","……我理解。\n\n但你现在最需要的，可能不是答案，而是有人听你说。"],
-        "史湘云": ["嗯嗯，然后呢？你继续说！","我听到了！你接着说！","嗯嗯，我懂你的意思！\n\n你还有什么想说的吗？","嗯嗯，我理解！\n\n但你知道吗，我觉得你已经很棒了！"],
-        "探春": ["嗯，我理解你的意思。\n\n你觉得这件事的关键在哪？","我听到了。\n\n你有没有想过，换一种方式来处理？","嗯，我理解。\n\n但我想问你：你现在的做法，是在解决问题，还是在逃避问题？","我听到了。\n\n你说的这些，我记住了。\n\n你接下来打算怎么做？"],
-    };
+    var recent = history.slice(-6).map(function(m) {
+        return (m.role === 'user' ? '用户' : char) + '：' + m.text;
+    }).join('\n');
 
-    const openers = {
-        "林黛玉": "……嗯，你来了。\n\n你想说什么，就说吧。我在这里。",
-        "薛宝钗": "嗯，请说。\n\n我在听，你慢慢来。",
-        "贾宝玉": "嗯嗯，你说！\n\n我在这儿呢，你尽管说！",
-        "李纨": "……嗯。\n\n你说吧，我在听。",
-        "史湘云": "嗯嗯，你说！\n\n我这个人最爱听人说话了！你尽管说！",
-        "探春": "嗯，请说。\n\n有什么事，直说就好。",
-    };
+    var emotionText = detected.length > 0 ? '用户当前情绪：' + detected.join('、') + '。' : '';
+    var systemPrompt = charPrompt + '\n' + emotionText + '\n对话历史：\n' + recent + '\n请直接回复' + char + '的话，不要加引号，不要加角色名，不要加任何格式。';
 
-    if (detected.length > 0) {
-        const primary = detected[0];
-        const charPool = R[char] || R["贾宝玉"];
-        if (charPool[primary]) return pick(charPool[primary]);
-    }
-    if (isFollowUp && detected.length === 0) {
-        return pick(followUps[char] || followUps["贾宝玉"]);
-    }
-    if (!isFollowUp) return openers[char] || "嗯，我在听。你说吧。";
+    fetch('https://api.minimax.chat/v1/text/chatbase_v2', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: 'abab6.5s-chat',
+            tokens_to_generate: 1024,
+            messages: [{sender_type: 'BOT', text: systemPrompt}]
+        })
+    })
+    .then(function(res) { if (!res.ok) throw new Error('API错误'); return res.json(); })
+    .then(function(data) {
+        var reply = (data.choices && data.choices[0] && data.choices[0].text || '').trim();
+        if (!reply) throw new Error('Empty response');
+        state.chatHistory.push({role:'ai', name: char, text: reply});
+        renderChat();
+    })
+    .catch(function(e) {
+        // Fallback to keyword replies on error
+        var R2 = {
+            "林黛玉": ["……我听到了。你不需要解释为什么难过。","……你的难过，我感受到了。在这里你不需要假装。","……嗯。你现在最想说什么？"],
+            "薛宝钗": ["我理解你的感受。告诉我具体情况。","嗯，我理解。允许自己难过。"],
+            "贾宝玉": ["……嗯。我听着。你不用着急。","……你知道吗，你现在的感觉是真实的。"],
+            "李纨": ["……嗯。我在这里。"],
+            "史湘云": ["嘿，别想太多！有事跟我说！"],
+            "探春": ["告诉我发生了什么，我们想办法解决。"]
+        };
+        var fallback = (R2[char] || ["……嗯，我听到了。"])[0];
+        state.chatHistory.push({role:'ai', name: char, text: fallback});
+        renderChat();
+    });
 
-    const defaults = {
-        "林黛玉": ["……嗯，我听到了。\n\n你愿意再多说一些吗？","……你说的，我都记在心里了。\n\n你还有什么想说的吗？","……嗯。\n\n有时候，说出来本身就是一种勇气。"],
-        "薛宝钗": ["我理解。你愿意再详细说说吗？","嗯，我听到了。\n\n你觉得这件事最核心的问题是什么？","我明白了。\n\n你有没有想过从另一个角度看这件事？"],
-        "贾宝玉": ["嗯嗯，我在听呢！你继续说！","我听到了！\n\n你放心，我在这儿陪你！","嗯嗯，你说得对！\n\n然后呢？"],
-        "李纨": ["……嗯。\n\n我听到了。","……你说的，我听明白了。\n\n不急，慢慢说。","……嗯。\n\n有些事情，说出来就好了。"],
-        "史湘云": ["嗯嗯，然后呢？你继续说！","我听到了！你接着说！","嗯嗯，我懂你的意思！\n\n你还有什么想说的？"],
-        "探春": ["我听明白了。你接下来打算怎么办？","嗯，我理解你的意思。\n\n你觉得这件事的关键在哪？","我听到了。\n\n你有没有想过，换一种方式来处理？"],
-    };
-    return pick(defaults[char] || defaults["贾宝玉"]);
+    // Return loading state immediately (async)
+    return '……';
 }
 
-
-
-// ═══════════════════════════════════════════════════════════
-//  BIRTH CHART
-// ═══════════════════════════════════════════════════════════
 
 function initBirthChart() {
     const dateInput = document.getElementById('bc-date');
@@ -1793,8 +1857,74 @@ function playFire() {
 
 var PLAY_FUNCS = {
     guqin: playGuqin, guqin2: playGuqin2, guzheng: playGuzheng,
-    rain: playRain, fire: playFire, chimes: playChimes, wind: playWind, frogs: playFrogs
+    rain: playRain, fire: playFire, chimes: playChimes, wind: playWind, frogs: playFrogs,
+    ai: playAiHealing
 };
+
+var aiSelectedMood = '减压';
+function selectAiMood(el, mood) {
+    aiSelectedMood = mood;
+    document.querySelectorAll('[id^=aimood-]').forEach(function(b){b.classList.remove('btn-primary')});
+    el.classList.add('btn-primary');
+}
+var aiAudio = null;
+var aiApiKey = window.__MINIMAX_API_KEY__ || localStorage.getItem('minimax_key') || '';
+var aiGenerating = false;
+
+function playAiHealing() {
+    if (!aiApiKey) {
+        aiApiKey = window.__MINIMAX_API_KEY__ || '';
+        if (!aiApiKey) { alert('请在 Netlify 后台设置 MINIMAX_API_KEY'); return; }
+    }
+    if (aiGenerating) return;
+    aiGenerating = true;
+
+    var moodEl = document.getElementById('ai-mood-select') || null;
+    var mood = aiSelectedMood;
+
+    var prompts = {
+        '助眠': '舒缓助眠，雨声，白噪音，深夜，月光钢琴，温暖氛围',
+        '减压': '放松减压，海浪森林风声，温暖原声吉他，治愈氛围',
+        '专注': '专注工作，咖啡馆环境音，轻爵士，节奏平稳，不打扰',
+        '疗愈': '心灵疗愈，钢琴弦乐交织，温柔治愈，悲伤释放',
+        '唤醒': '清晨唤醒，鸟鸣晨光，轻快自然，原声吉他，活力清晨'
+    };
+
+    var npTitle = document.getElementById('np-title');
+    var npTime = document.getElementById('np-time');
+    if (npTitle) npTitle.textContent = '✨ 正在生成…';
+    if (npTime) npTime.textContent = 'AI 创作中，请稍候';
+
+    fetch('https://api.minimax.chat/v1/text_to_music', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + aiApiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'music-02', prompt: prompts[mood] || prompts['减压'] })
+    })
+    .then(function(res) {
+        if (!res.ok) throw new Error('API错误，请检查Key');
+        return res.blob();
+    })
+    .then(function(blob) {
+        var url = URL.createObjectURL(blob);
+        if (aiAudio) { aiAudio.pause(); aiAudio = null; }
+        aiAudio = new Audio(url);
+        aiAudio.play();
+        if (npTitle) npTitle.textContent = '✨ AI 疗愈 · ' + mood;
+        if (npTime) npTime.textContent = 'MiniMax 创作';
+        document.getElementById('music-now-playing').style.display = 'flex';
+        aiGenerating = false;
+        aiAudio.onended = function() {
+            if (npTitle) npTitle.textContent = '未在播放';
+            if (npTime) npTime.textContent = '点击开始';
+        };
+    })
+    .catch(function(e) {
+        alert('生成失败：' + e.message);
+        if (npTitle) npTitle.textContent = '未在播放';
+        if (npTime) npTime.textContent = '点击开始';
+        aiGenerating = false;
+    });
+}
 
 function initMusic() {
     var html = '<div class="music-now-playing" id="music-now-playing">' +
@@ -1809,6 +1939,19 @@ function initMusic() {
             '<div class="np-btn" onclick="musicNext()">⏭</div>' +
         '</div>' +
     '</div>';
+
+    // AI mood selector
+    html += '<div style="padding:.6rem .8rem;background:rgba(192,57,43,.05);border-radius:10px;margin:.4rem .8rem;border:1px solid var(--paper2)">';
+    html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:.4rem">✨ AI 心情音乐 · 选择心境</div>';
+    html += '<div style="display:flex;gap:.3rem;flex-wrap:wrap">';
+    var moods = [
+        ['助眠','🌙助眠'],['减压','🌿减压'],['专注','☕专注'],
+        ['疗愈','💜疗愈'],['唤醒','🌅唤醒']
+    ];
+    moods.forEach(function(m) {
+        html += '<button class="btn btn-sm ' + (m[0]==='减压'?'btn-primary':'btn-secondary') + '" onclick="selectAiMood(this,\'' + m[0] + '\')" id="aimood-' + m[0] + '">' + m[1] + '</button>';
+    });
+    html += '</div></div>';
 
     html += MUSIC.map(function(m, i) {
         return '<div class="music-item" id="music-item-' + i + '" onclick="musicPlay(' + i + ')">' +
@@ -2025,6 +2168,88 @@ function initTheory() {
 //  INIT
 // ═══════════════════════════════════════════════════════════
 initHome();
+</script>
+
+<script>
+// AI Healing Music v2
+var MINIMAX_API_KEY = window.__MINIMAX_API_KEY__ || localStorage.getItem('minimax_key') || '';
+var aiSelectedMood = '减压';
+var aiSelectedStyle = '民谣';
+var aiCurrentAudio = null;
+
+function setAIMood(el, mood) {
+    aiSelectedMood = mood;
+    document.querySelectorAll('#ai-mood-tags .btn').forEach(function(b){b.classList.remove('btn-primary')});
+    el.classList.add('btn-primary');
+}
+function setAIStyle(el, style) {
+    aiSelectedStyle = style;
+    document.querySelectorAll('#ai-style-tags .btn').forEach(function(b){b.classList.remove('btn-primary')});
+    el.classList.add('btn-primary');
+}
+function showAIGenModal() {
+    if (!MINIMAX_API_KEY) {
+        MINIMAX_API_KEY = window.__MINIMAX_API_KEY__ || '';
+        if (!MINIMAX_API_KEY) { alert('请在 Netlify 后台设置 MINIMAX_API_KEY'); return; }
+    }
+    document.getElementById('ai-gen-modal').style.display = 'flex';
+}
+function hideAIGenModal() {
+    document.getElementById('ai-gen-modal').style.display = 'none';
+}
+function generateAndPlayHealing() {
+    if (!MINIMAX_API_KEY) { showAIGenModal(); return; }
+    var statusEl = document.getElementById('ai-gen-status');
+    var btnEl = document.getElementById('ai-gen-btn');
+    if (!statusEl || !btnEl) return;
+    statusEl.style.display = 'block';
+    btnEl.disabled = true;
+    var moodPrompts = {
+        '助眠': '舒缓助眠，雨声，白噪音，深夜，月光，轻柔钢琴',
+        '减压': '放松减压，海浪，森林，风声，温暖，吉他',
+        '专注': '专注工作，咖啡馆，环境音，轻爵士，节奏平稳',
+        '疗愈': '心灵疗愈，钢琴，弦乐，温柔，治愈，悲伤释放',
+        '唤醒': '清晨唤醒，鸟鸣，晨光，轻快，自然，原声吉他'
+    };
+    var styleDesc = {
+        '电子': '电子音乐，赛博朋克，未来感，节奏感强',
+        '民谣': '民谣，木吉他，温暖，叙事感',
+        '古典': '古典音乐，钢琴，弦乐，优雅',
+        '国风': '古风，中国乐器，古筝，琵琶',
+        '爵士': '爵士乐，萨克斯，蓝调，慵懒'
+    };
+    var promptText = styleDesc[aiSelectedStyle] + '，' + moodPrompts[aiSelectedMood];
+    fetch('https://api.minimax.chat/v1/text_to_music', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + MINIMAX_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'music-02', prompt: promptText })
+    })
+    .then(function(res){ if(!res.ok) throw new Error('API错误，请检查Key'); return res.blob(); })
+    .then(function(blob) {
+        var url = URL.createObjectURL(blob);
+        if(aiCurrentAudio){ aiCurrentAudio.pause(); aiCurrentAudio=null; }
+        aiCurrentAudio = new Audio(url);
+        aiCurrentAudio.play();
+        var npTitle = document.getElementById('np-title');
+        var npTime = document.getElementById('np-time');
+        var nowPlaying = document.getElementById('music-now-playing');
+        if(npTitle) npTitle.textContent = '✨ '+aiSelectedMood+' · '+aiSelectedStyle;
+        if(npTime) npTime.textContent = 'AI疗愈音乐';
+        if(nowPlaying) nowPlaying.style.display = 'flex';
+        hideAIGenModal();
+        statusEl.style.display = 'none';
+        btnEl.disabled = false;
+        aiCurrentAudio.onended = function(){
+            if(npTitle) npTitle.textContent = '未在播放';
+            if(npTime) npTime.textContent = '点击开始';
+        };
+    })
+    .catch(function(e){
+        alert('生成失败：'+e.message);
+        statusEl.style.display = 'none';
+        btnEl.disabled = false;
+    });
+}
 </script>
 </body>
 </html>
