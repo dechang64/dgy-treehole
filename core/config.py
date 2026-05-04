@@ -11,8 +11,8 @@ MINIMAX_BASE_URL = "https://api.minimaxi.com"
 CHAT_MODEL = "MiniMax-Text-01"
 MUSIC_MODEL = "music-2.6-free"
 
-# ── 数据库（Streamlit Cloud 无持久文件系统，用 /tmp）──
-DB_PATH = os.environ.get("TREEHOLE_DB_PATH", "/tmp/treehole.db")
+# ── 数据库（Streamlit Cloud 无持久文件系统，用内存数据库）──
+DB_PATH = os.environ.get("TREEHOLE_DB_PATH", ":memory:")
 
 # ── 模式检测 ──
 MOCK_MODE = not MINIMAX_API_KEY

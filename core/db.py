@@ -15,13 +15,17 @@ from contextlib import contextmanager
 from core.config import DB_PATH, EMOTIONS
 
 _lock = threading.Lock()
+_conn = None  # 单例连接（内存数据库必须共享同一个连接）
 
 def _get_conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
+    global _conn
+    if _conn is None:
+        _conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        _conn.row_factory = sqlite3.Row
+        if DB_PATH != ":memory:":
+            _conn.execute("PRAGMA journal_mode=WAL")
+        _conn.execute("PRAGMA foreign_keys=ON")
+    return _conn
 
 @contextmanager
 def get_db():
@@ -32,8 +36,7 @@ def get_db():
     except Exception:
         conn.rollback()
         raise
-    finally:
-        conn.close()
+    # 内存数据库不关闭连接，保持单例
 
 def init_db():
     """建表（幂等）"""

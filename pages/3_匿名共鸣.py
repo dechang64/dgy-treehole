@@ -9,7 +9,7 @@
 
 import time
 import streamlit as st
-from core.db import create_post, get_recent_posts, resonate_post, get_post_stats
+from core.db import create_post, get_posts, resonate_post
 from core.emotion_detector import detect_emotion, EMOTIONS
 from core.config import SCENES
 
@@ -65,7 +65,7 @@ with tab2:
     # 情绪筛选
     filter_emotion = st.selectbox("按情绪筛选", ["全部"] + EMOTIONS, index=0)
 
-    posts = get_recent_posts(limit=30, emotion=None if filter_emotion == "全部" else filter_emotion)
+    posts = get_posts(limit=30, emotion=None if filter_emotion == "全部" else filter_emotion)
 
     if not posts:
         st.markdown("""
@@ -122,7 +122,7 @@ with tab3:
 </div>
 """, unsafe_allow_html=True)
 
-            matching_posts = get_recent_posts(limit=10, emotion=top_emotion)
+            matching_posts = get_posts(limit=10, emotion=top_emotion)
             if matching_posts:
                 st.markdown(f"### 与你同样感到「{top_emotion}」的人")
                 for post in matching_posts[:5]:
