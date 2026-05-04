@@ -100,5 +100,3 @@ def _mock_response(character: str, messages: list[dict]) -> str:
         return "你已经很努力了。累的时候，允许自己停下来休息，这不是软弱。\n\n你有多久没有好好休息了？"
     else:
         return "嗯，我在听。你说的每一句话，我都认真对待。\n\n你还有什么想说的吗？"
-
-    return char_info["greeting"]

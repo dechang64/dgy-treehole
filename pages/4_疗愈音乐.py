@@ -25,6 +25,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ── MOCK 模式提示 ──
 if MOCK_MODE:
     st.markdown("""
 <div class="card" style="text-align:center;">
@@ -32,6 +33,7 @@ if MOCK_MODE:
     <p style="font-size: 0.8rem; color: #b8860b;">请在 Streamlit Secrets 中配置 MINIMAX_API_KEY</p>
 </div>
 """, unsafe_allow_html=True)
+    st.stop()
 
 # ── 选择参数 ──
 col1, col2 = st.columns(2)

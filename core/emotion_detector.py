@@ -109,7 +109,7 @@ def compute_session_emotion_profile(messages: list[dict]) -> dict[str, float]:
     Returns:
         {"悲伤": 0.3, "焦虑": 0.2, ...} 归一化后的情绪分布
     """
-    user_messages = [m["text"] for m in messages if m.get("role") == "user"]
+    user_messages = [m.get("text") or m.get("content", "") for m in messages if m.get("role") == "user"]
     if not user_messages:
         return {}
 

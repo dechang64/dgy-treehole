@@ -11,8 +11,8 @@ MINIMAX_BASE_URL = "https://api.minimaxi.com"
 CHAT_MODEL = "MiniMax-Text-01"
 MUSIC_MODEL = "music-2.6-free"
 
-# ── 数据库 ──
-DB_PATH = os.environ.get("TREEHOLE_DB_PATH", "treehole.db")
+# ── 数据库（Streamlit Cloud 无持久文件系统，用 /tmp）──
+DB_PATH = os.environ.get("TREEHOLE_DB_PATH", "/tmp/treehole.db")
 
 # ── 模式检测 ──
 MOCK_MODE = not MINIMAX_API_KEY
@@ -26,20 +26,26 @@ GOLD = "#b8860b"
 JADE = "#2d6a4f"
 MUTED = "#8b7355"
 
-# ── 6大场景 ──
+# ── 6大场景（与原版 index.html SCENES 完全对齐）──
 SCENES = [
-    {"name": "潇湘馆", "char": "林黛玉", "icon": "🎋", "color": "#2d6a4f",
-     "desc": "竹林深处，适合倾诉心事", "theory": "叙事疗法"},
-    {"name": "蘅芜苑", "char": "薛宝钗", "icon": "🌿", "color": "#5a7d6b",
-     "desc": "清幽雅致，适合理性梳理", "theory": "认知行为疗法"},
-    {"name": "怡红院", "char": "贾宝玉", "icon": "🌸", "color": "#c0392b",
-     "desc": "温暖包容，适合释放情绪", "theory": "人本主义疗法"},
-    {"name": "稻香村", "char": "李纨", "icon": "🌾", "color": "#8b7355",
-     "desc": "质朴宁静，适合沉淀思考", "theory": "正念疗法"},
-    {"name": "藕香榭", "char": "史湘云", "icon": "🪷", "color": "#d4a574",
-     "desc": "开阔明亮，适合畅所欲言", "theory": "积极心理学"},
-    {"name": "秋爽斋", "char": "探春", "icon": "🍂", "color": "#a0522d",
-     "desc": "爽朗明快，适合寻求方向", "theory": "焦点解决疗法"},
+    {"name": "潇湘馆", "icon": "🎋", "desc": "竹林深处，月影斑驳",
+     "mood": "孤独、思念", "char": "林黛玉", "theory": "叙事疗法",
+     "style": "倾听你的心事", "color": "#2d6a4f"},
+    {"name": "蘅芜苑", "icon": "🌿", "desc": "幽香弥漫，清冷如月",
+     "mood": "迷茫、压抑", "char": "薛宝钗", "theory": "认知行为疗法",
+     "style": "理性帮你理清", "color": "#5a7d6b"},
+    {"name": "怡红院", "icon": "🌸", "desc": "花团锦簇，温暖如春",
+     "mood": "焦虑、不安", "char": "贾宝玉", "theory": "人本主义",
+     "style": "温柔化解不安", "color": "#c0392b"},
+    {"name": "稻香村", "icon": "🌾", "desc": "田园宁静，炊烟袅袅",
+     "mood": "疲惫、倦怠", "char": "李纨", "theory": "正念+ACT",
+     "style": "安静的陪伴", "color": "#8b7355"},
+    {"name": "藕香榭", "icon": "🪷", "desc": "碧水清波，荷香四溢",
+     "mood": "纠结、犹豫", "char": "史湘云", "theory": "积极心理学",
+     "style": "大大方方翻篇", "color": "#d4a574"},
+    {"name": "秋爽斋", "icon": "📜", "desc": "窗明几净，笔墨书香",
+     "mood": "愤怒、不满", "char": "探春", "theory": "赋权+SFBT",
+     "style": "陪你把话说清楚", "color": "#a0522d"},
 ]
 
 SCENE_MAP = {s["name"]: s for s in SCENES}
