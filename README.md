@@ -1,45 +1,31 @@
-# 大观园树洞 🌸
+# 大观园树洞 v2.0 - 代码说明
 
-> 红楼梦主题心理疗愈平台 · 移动端H5
+## 本次修复内容
 
-MBTI/星座引导 × 6大场景 × AI角色倾听 × 匿名树洞 × 匿名社交 × 疗愈音乐
+### 1. sendChat 函数
+- 移除 setTimeout 包装，改为 callback 异步模式
+- 显示打字指示器（......），收到回复后替换
 
-## 一键部署到 Netlify
+### 2. getAIResponse 函数
+- 改为 callback(reply) 异步模式，不再直接 push
+- 删除残留的旧版本函数
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/dechang64/dgy-treehole)
+### 3. API 响应解析（关键修复）
+- MiniMax 老 API 返回格式: { BaseResp: {...}, Response: "回复内容" }
+- 之前代码错误使用: data.Response.Choice[0].Reply
+- 现在正确使用: data.Response (直接是回复字符串)
 
-> 将上面链接中的 `YOUR_USERNAME/dgy-treehole` 替换为你 fork 后的仓库地址
+### 4. API 端点
+- 对话: https://api.minimax.chat/v1/text/chatbase_v2
+- 模型: abab6.5s-chat
 
-## 本地预览
+## 上传到 GitHub 步骤
+1. 下载 index.html
+2. 打开 https://github.com/Dechang64/dgy-treehole
+3. 点 Upload file → 上传 index.html（覆盖）
+4. 点 Commit changes
+5. Netlify 自动部署
 
-```bash
-# 任何静态服务器都行
-python3 -m http.server 8080
-# 或
-npx serve .
-```
-
-然后手机浏览器打开 `http://localhost:8080`
-
-## 功能
-
-| 模块 | 说明 |
-|------|------|
-| 🔮 MBTI测试 | 8题红楼梦情境化测试，推荐最适合的场景 |
-| ⭐ 星座指引 | 12星座×4元素，匹配疗愈风格 |
-| 🏯 6大场景 | 潇湘馆/蘅芜苑/怡红院/稻香村/藕香榭/秋爽斋 |
-| 💬 AI对话 | 6位红楼梦角色，各有独立情绪识别+回复逻辑 |
-| 🌳 匿名树洞 | 4种释放方式（随风/沉湖/花瓣/青烟） |
-| 🌸 匿名社交 | 共鸣墙/情绪匹配/疗愈圈/技术架构 |
-| 🎵 疗愈音乐 | 古琴/箫/琵琶/自然白噪音 |
-| 📚 疗愈原理 | 6大心理学理论×6个红楼故事 |
-
-## 技术栈
-
-- 纯 HTML/CSS/JS，零依赖，单文件
-- 移动端适配，微信内置浏览器兼容
-- Playwright 自动化测试 7/7 通过
-
-## License
-
-MIT
+## 测试
+部署完成后打开 https://dgy-treehole.netlify.app
+进入任意院落跟主人说话，看回复是否个性化（不再重复）
