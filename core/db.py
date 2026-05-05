@@ -11,6 +11,7 @@ import sqlite3
 import json
 import time
 import threading
+import html
 from contextlib import contextmanager
 from core.config import DB_PATH, EMOTIONS
 
@@ -96,7 +97,7 @@ def create_post(content: str, emotion: str, scene: str = "") -> int:
         with get_db() as db:
             cur = db.execute(
                 "INSERT INTO posts (content, emotion, scene, created_at) VALUES (?, ?, ?, ?)",
-                (content[:500], emotion, scene, time.time())
+                (html.escape(content[:500]), emotion, scene, time.time())
             )
             return cur.lastrowid
 

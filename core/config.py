@@ -2,20 +2,23 @@
 
 import os
 
-# ── MiniMax API ──
+# ── GLM API（智谱AI，OpenAI 兼容格式）──
+GLM_API_KEY = os.environ.get("GLM_API_KEY", "")
+GLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
+
+# ── MiniMax API（仅用于音乐生成，可选）──
 MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
-MINIMAX_GROUP_ID = os.environ.get("MINIMAX_GROUP_ID", "")
 MINIMAX_BASE_URL = "https://api.minimaxi.com"
 
 # ── 模型 ──
-CHAT_MODEL = "MiniMax-Text-01"
-MUSIC_MODEL = "music-2.6-free"
+CHAT_MODEL = "glm-4-flash"          # GLM 免费模型，速度快，适合对话
+MUSIC_MODEL = "music-2.6-free"      # MiniMax 音乐模型
 
 # ── 数据库（Streamlit Cloud 无持久文件系统，用内存数据库）──
 DB_PATH = os.environ.get("TREEHOLE_DB_PATH", ":memory:")
 
 # ── 模式检测 ──
-MOCK_MODE = not MINIMAX_API_KEY
+MOCK_MODE = not GLM_API_KEY
 
 # ── 设计令牌 ──
 INK = "#2c1810"

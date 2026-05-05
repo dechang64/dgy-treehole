@@ -1,18 +1,18 @@
-"""MiniMax 聊天客户端 — OpenAI 兼容格式
+"""GLM 聊天客户端 — 智谱AI OpenAI 兼容格式
 
-API: POST https://api.minimaxi.com/v1/chat/completions
-Model: MiniMax-Text-01
+API: POST https://open.bigmodel.cn/api/paas/v4/chat/completions
+Model: glm-4-flash（免费，速度快，适合对话场景）
 """
 
 import requests
-from core.config import MINIMAX_API_KEY, MINIMAX_GROUP_ID, MINIMAX_BASE_URL, CHAT_MODEL, MOCK_MODE
+from core.config import GLM_API_KEY, GLM_BASE_URL, CHAT_MODEL, MOCK_MODE
 from core.characters import get_character
 
 
 def chat(messages: list[dict], character: str = "贾宝玉",
          temperature: float = 0.7, max_tokens: int = 300) -> str:
     """
-    发送聊天请求到 MiniMax API
+    发送聊天请求到 GLM API
 
     Args:
         messages: [{"role": "system"|"user"|"assistant", "content": "..."}]
@@ -36,11 +36,9 @@ def chat(messages: list[dict], character: str = "贾宝玉",
             api_messages.append({"role": msg["role"], "content": msg["content"]})
 
     headers = {
-        "Authorization": f"Bearer {MINIMAX_API_KEY}",
+        "Authorization": f"Bearer {GLM_API_KEY}",
         "Content-Type": "application/json",
     }
-    if MINIMAX_GROUP_ID:
-        headers["Group-Id"] = MINIMAX_GROUP_ID
 
     payload = {
         "model": CHAT_MODEL,
@@ -51,7 +49,7 @@ def chat(messages: list[dict], character: str = "贾宝玉",
 
     try:
         resp = requests.post(
-            f"{MINIMAX_BASE_URL}/v1/chat/completions",
+            f"{GLM_BASE_URL}/chat/completions",
             headers=headers,
             json=payload,
             timeout=30,

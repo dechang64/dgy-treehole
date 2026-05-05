@@ -294,10 +294,10 @@ st.markdown("""
 col1, col2 = st.columns(2)
 with col1:
     if st.button("🔮 MBTI测试", type="primary", use_container_width=True):
-        st.switch_page("pages/5_心灵指引.py")
+        st.switch_page("pages/5_mbti.py")
 with col2:
     if st.button("⭐ 星座指引", use_container_width=True):
-        st.switch_page("pages/7_星座星盘.py")
+        st.switch_page("pages/7_zodiac.py")
 
 # ═══════════════════════════════════════════════════════════
 #  导航（7个功能入口）
@@ -313,8 +313,8 @@ nav_items = [
     ("📊", "洞察"),
 ]
 nav_pages = [
-    "1_倾诉对话", "2_匿名树洞", "3_匿名共鸣",
-    "4_疗愈音乐", "5_心灵指引", "7_星座星盘", "6_情绪洞察",
+    "1_chat", "2_treehole", "3_resonance",
+    "4_music", "5_mbti", "7_zodiac", "6_insight",
 ]
 for i, (icon, label) in enumerate(nav_items):
     with nav_cols[i]:
@@ -346,7 +346,7 @@ for i in range(0, len(SCENES), 2):
                 st.session_state.current_scene = scene["name"]
                 st.session_state.chat_character = scene["char"]
                 st.session_state.chat_history = []
-                st.switch_page("pages/1_倾诉对话.py")
+                st.switch_page("pages/1_chat.py")
 
 # ── 底部信息 ──
 st.markdown("""
@@ -357,4 +357,4 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if MOCK_MODE:
-    st.markdown('<div style="text-align:center"><span class="mock-badge">🎭 演示模式（未配置 API Key）</span></div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center"><span class="mock-badge">🎭 演示模式（未配置 GLM_API_KEY）</span></div>', unsafe_allow_html=True)

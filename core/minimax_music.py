@@ -1,14 +1,20 @@
-"""MiniMax 音乐生成客户端
+"""MiniMax 音乐生成客户端（可选，需单独配置 MINIMAX_API_KEY）
 
 API: POST https://api.minimaxi.com/v1/music_generation
 Model: music-2.6-free
 Response: JSON, data.audio 为 hex 编码音频数据
+
+注意：音乐生成是可选功能，不配置 MINIMAX_API_KEY 时该页面显示提示。
+聊天功能使用 GLM API，两者独立。
 """
 
 import requests
 import tempfile
 import os
-from core.config import MINIMAX_API_KEY, MINIMAX_BASE_URL, MUSIC_MODEL, MOCK_MODE
+from core.config import MINIMAX_API_KEY, MINIMAX_BASE_URL, MUSIC_MODEL
+
+# 音乐功能是否可用（独立于聊天 MOCK_MODE）
+MUSIC_AVAILABLE = bool(MINIMAX_API_KEY)
 
 
 def generate_music(
@@ -31,8 +37,8 @@ def generate_music(
     Returns:
         音频文件路径，失败返回 None
     """
-    if MOCK_MODE:
-        return _mock_music(place, mood)
+    if not MUSIC_AVAILABLE:
+        return None
 
     full_prompt = f"中国传统乐器演奏的{mood}氛围音乐，{prompt}，{place}场景，空灵悠远，适合冥想放松"
 
@@ -78,8 +84,3 @@ def generate_music(
         return None
     except Exception:
         return None
-
-
-def _mock_music(place: str, mood: str) -> str | None:
-    """Mock 模式：返回 None（无 API Key 时无法生成真实音乐）"""
-    return None

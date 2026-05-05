@@ -167,7 +167,7 @@ def test_db():
 
 
 def test_minimax_chat_mock():
-    """MiniMax 聊天 Mock 模式"""
+    """GLM 聊天 Mock 模式"""
     import core.minimax_chat as chat_module
     old_mock = chat_module.MOCK_MODE
     chat_module.MOCK_MODE = True
@@ -190,18 +190,13 @@ def test_minimax_chat_mock():
 
 
 def test_minimax_music_mock():
-    """MiniMax 音乐 Mock 模式"""
+    """MiniMax 音乐 Mock 模式（无 MINIMAX_API_KEY）"""
     import core.minimax_music as music_module
-    old_mock = music_module.MOCK_MODE
-    music_module.MOCK_MODE = True
+    assert music_module.MUSIC_AVAILABLE == False  # 测试环境无 Key
+    result = music_module.generate_music("宁静", "潇湘馆", "宁静")
+    assert result is None
 
-    try:
-        result = music_module.generate_music("宁静", "潇湘馆", "宁静")
-        assert result is None  # Mock 模式返回 None
-
-        print("  ✅ minimax_music: mock mode returns None (expected)")
-    finally:
-        music_module.MOCK_MODE = old_mock
+    print("  ✅ minimax_music: no key → returns None (expected)")
 
 
 if __name__ == "__main__":
