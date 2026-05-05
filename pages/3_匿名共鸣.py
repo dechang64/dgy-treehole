@@ -10,8 +10,8 @@
 import time
 import streamlit as st
 from core.db import create_post, get_posts, resonate_post
-from core.emotion_detector import detect_emotion, EMOTIONS
-from core.config import SCENES
+from core.emotion_detector import detect_emotion, compute_session_emotion_profile
+from core.config import EMOTIONS, SCENES
 
 st.set_page_config(page_title="匿名共鸣 · 大观园树洞", page_icon="🌸", layout="centered")
 
@@ -65,7 +65,10 @@ with tab2:
     # 情绪筛选
     filter_emotion = st.selectbox("按情绪筛选", ["全部"] + EMOTIONS, index=0)
 
-    posts = get_posts(limit=30, emotion=None if filter_emotion == "全部" else filter_emotion)
+    try:
+        posts = get_posts(limit=30, emotion=None if filter_emotion == "全部" else filter_emotion)
+    except Exception:
+        posts = []
 
     if not posts:
         st.markdown("""
@@ -112,7 +115,6 @@ with tab3:
     # 基于当前会话情绪匹配
     chat_history = st.session_state.get("chat_history", [])
     if chat_history:
-        from core.emotion_detector import compute_session_emotion_profile
         profile = compute_session_emotion_profile(chat_history)
         if profile:
             top_emotion = max(profile, key=profile.get)
@@ -122,7 +124,10 @@ with tab3:
 </div>
 """, unsafe_allow_html=True)
 
-            matching_posts = get_posts(limit=10, emotion=top_emotion)
+            try:
+                matching_posts = get_posts(limit=10, emotion=top_emotion)
+            except Exception:
+                matching_posts = []
             if matching_posts:
                 st.markdown(f"### 与你同样感到「{top_emotion}」的人")
                 for post in matching_posts[:5]:

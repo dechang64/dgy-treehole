@@ -10,8 +10,14 @@ import streamlit as st
 from core.config import RELEASE_METHODS
 from core.emotion_detector import detect_emotion
 from core.fl_engine import submit_local_stats
+from core.db import record_treehole, get_treehole_stats
+import uuid
 
 st.set_page_config(page_title="匿名树洞 · 大观园树洞", page_icon="🌳", layout="centered")
+
+# ── 初始化 session ──
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())[:8]
 
 # ── 返回 ──
 if st.button("← 回到大观园", use_container_width=True):
@@ -54,11 +60,20 @@ if treehole_text:
         method_info = RELEASE_METHODS[selected_method]
         emotion = detect_emotion(treehole_text)
 
+        # 记录树洞统计
+        try:
+            record_treehole(selected_method, emotion, len(treehole_text))
+        except Exception:
+            pass
+
         # 提交联邦学习统计（只提交情绪标签，不提交内容）
-        submit_local_stats(
-            st.session_state.session_id,
-            {emotion: 1.0}
-        )
+        try:
+            submit_local_stats(
+                st.session_state.session_id,
+                {emotion: 1.0}
+            )
+        except Exception:
+            pass
 
         # 释放动画
         animations = {
@@ -112,13 +127,16 @@ if treehole_text:
             st.rerun()
 
 # ── 树洞统计 ──
-from core.db import get_treehole_stats
-stats = get_treehole_stats()
-if stats["total"] > 0:
+try:
+    stats = get_treehole_stats()
+except Exception:
+    stats = {}
+total_count = sum(v["count"] for v in stats.values()) if stats else 0
+if total_count > 0:
     st.markdown("---")
     st.markdown(f"""
 <div style="text-align:center; color: #8b7355; font-size: 0.8rem;">
-    已有 <strong>{stats['total']}</strong> 位朋友在这里释放了心事<br>
+    已有 <strong>{total_count}</strong> 位朋友在这里释放了心事<br>
     <span style="color: #b8860b;">联邦学习保护了每一位朋友的隐私</span>
 </div>
 """, unsafe_allow_html=True)

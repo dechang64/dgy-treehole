@@ -6,6 +6,10 @@ Streamlit + MiniMax API + 联邦学习
 
 import streamlit as st
 from core.config import SCENES, MOCK_MODE
+from core.db import init_db
+
+# ── 初始化数据库（建表，幂等）──
+init_db()
 
 # ── 页面配置 ──
 st.set_page_config(

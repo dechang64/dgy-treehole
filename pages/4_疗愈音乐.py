@@ -87,7 +87,7 @@ if "current_audio" in st.session_state:
         st.download_button(
             "📥 下载音乐",
             data=open(audio_path, "rb").read(),
-            file_name=f"大观园_{place}_{mood}.mp3",
+            file_name=f"大观园_{st.session_state.audio_place}_{st.session_state.audio_mood}.mp3",
             mime="audio/mp3",
             use_container_width=True,
         )

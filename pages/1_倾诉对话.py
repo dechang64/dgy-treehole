@@ -74,9 +74,12 @@ if user_input:
     st.session_state.chat_history.append({"role": "assistant", "content": response})
 
     # 提交联邦学习统计
-    profile = compute_session_emotion_profile(st.session_state.chat_history)
-    if profile:
-        submit_local_stats(st.session_state.session_id, profile)
+    try:
+        profile = compute_session_emotion_profile(st.session_state.chat_history)
+        if profile:
+            submit_local_stats(st.session_state.session_id, profile)
+    except Exception:
+        pass
 
     st.rerun()
 

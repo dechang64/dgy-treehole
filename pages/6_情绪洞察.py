@@ -9,8 +9,8 @@
 
 import streamlit as st
 from core.fl_engine import get_global_emotion_trend, compute_entropy, compute_confidence
-from core.emotion_detector import compute_session_emotion_profile, EMOTIONS
-from core.config import MOCK_MODE
+from core.emotion_detector import compute_session_emotion_profile
+from core.config import EMOTIONS, MOCK_MODE
 
 st.set_page_config(page_title="情绪洞察 · 大观园树洞", page_icon="📊", layout="centered")
 
@@ -101,7 +101,10 @@ else:
 st.markdown("---")
 st.markdown("### 🌐 全局情绪趋势（联邦聚合）")
 
-trend = get_global_emotion_trend()
+try:
+    trend = get_global_emotion_trend()
+except Exception:
+    trend = {"current": {}, "rounds": [], "total_clients": 0, "total_rounds": 0}
 
 st.markdown(f"""
 <div class="card" style="text-align:center;">

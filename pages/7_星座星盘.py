@@ -212,16 +212,19 @@ with tab_chart:
 """, unsafe_allow_html=True)
 
         # 星体详情（对齐原版 .chart-planet）
-        planet_keys = ["sun", "moon", "mercury", "venus", "mars", "rising"]
-        planet_icons = {"sun": "☀️", "moon": "🌙", "mercury": "☿️", "venus": "💕", "mars": "🔥", "rising": "⬆️"}
+        planet_keys = ["太阳", "月亮", "水星", "金星", "火星", "上升"]
+        planet_icons = {"太阳": "☀️", "月亮": "🌙", "水星": "☿️", "金星": "💕", "火星": "🔥", "上升": "⬆️"}
+        chart_key_map = {"太阳": "sun", "月亮": "moon", "水星": "mercury", "金星": "venus", "火星": "mars", "上升": "rising"}
 
         for key in planet_keys:
-            p = chart.get(key, {})
+            chart_key = chart_key_map[key]
+            p = chart.get(chart_key, {})
             if not p:
                 continue
             pd = PLANET_DESC.get(key, {})
             sign_name = p.get("sign", "")
-            desc_text = pd.get("desc", lambda s: "")(sign_name) if callable(pd.get("desc")) else pd.get("desc", "")
+            desc_dict = pd.get("desc", {})
+            desc_text = desc_dict.get(sign_name, "") if isinstance(desc_dict, dict) else ""
 
             st.markdown(f"""
 <div class="chart-planet">
