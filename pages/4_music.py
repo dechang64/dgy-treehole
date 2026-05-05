@@ -12,6 +12,7 @@ from core.config import MUSIC_PLACES, MUSIC_MOODS
 import os
 
 st.set_page_config(page_title="疗愈音乐 · 大观园树洞", page_icon="🎵", layout="centered")
+from core.styles import inject_css; inject_css()
 
 # ── 返回 ──
 if st.button("← 回到大观园", use_container_width=True):
