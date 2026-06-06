@@ -1,4 +1,4 @@
-"""疗愈音乐 — MiniMax music-2.6-free 生成
+"""疗愈音乐 — MiniMax music-2.6 生成
 
 功能：
 - 选择场景和情绪风格
@@ -44,8 +44,6 @@ with col1:
 with col2:
     mood = st.selectbox("情绪", MUSIC_MOODS, index=0)
 
-duration = st.slider("时长（秒）", 30, 120, 60, step=10)
-
 # ── 自定义描述 ──
 custom_prompt = st.text_input(
     "自定义描述（可选）",
@@ -60,7 +58,6 @@ if st.button("🎵 生成疗愈音乐", type="primary", use_container_width=True
             prompt=prompt,
             place=place,
             mood=mood,
-            duration=duration,
         )
 
     if audio_path and os.path.exists(audio_path):
