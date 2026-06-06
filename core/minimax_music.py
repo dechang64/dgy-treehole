@@ -1,8 +1,7 @@
-"""MiniMax 音乐生成客户端（可选，需单独配置 MINIMAX_API_KEY）
+"""MiniMax 音乐生成客户端（Token Plan 用户专用）
 
 API: POST https://api.minimaxi.com/v1/music_generation
-Model: music-2.6-free
-Response: JSON, data.audio 为 hex 编码音频数据
+Model: music-2.6（Token Plan 用户用完整版，RPM更高）
 
 注意：音乐生成是可选功能，不配置 MINIMAX_API_KEY 时该页面显示提示。
 聊天功能使用 GLM API，两者独立。
@@ -11,7 +10,7 @@ Response: JSON, data.audio 为 hex 编码音频数据
 import requests
 import tempfile
 import os
-from core.config import MINIMAX_API_KEY, MINIMAX_BASE_URL, MUSIC_MODEL
+from core.config import MINIMAX_API_KEY, MINIMAX_BASE_URL
 
 # 音乐功能是否可用（独立于聊天 MOCK_MODE）
 MUSIC_AVAILABLE = bool(MINIMAX_API_KEY)
@@ -21,7 +20,6 @@ def generate_music(
     prompt: str,
     place: str = "潇湘馆",
     mood: str = "宁静",
-    duration: int = 60,
     is_instrumental: bool = True,
 ) -> str | None:
     """
@@ -31,7 +29,6 @@ def generate_music(
         prompt: 音乐描述
         place: 场景名（用于生成提示词）
         mood: 情绪风格
-        duration: 时长（秒）
         is_instrumental: 是否纯音乐
 
     Returns:
@@ -48,11 +45,11 @@ def generate_music(
     }
 
     payload = {
-        "model": MUSIC_MODEL,
+        "model": "music-2.6",  # Token Plan 用完整版
         "prompt": full_prompt,
-        "duration": duration,
         "is_instrumental": is_instrumental,
-        "output_format": "hex",
+        "output_format": "url",  # 用 url 不用 hex，更稳定
+        "aigc_watermark": False,
     }
 
     try:
@@ -60,23 +57,35 @@ def generate_music(
             f"{MINIMAX_BASE_URL}/v1/music_generation",
             headers=headers,
             json=payload,
-            timeout=120,  # 音乐生成较慢
+            timeout=180,  # 音乐生成需要更长时间
         )
         resp.raise_for_status()
         data = resp.json()
 
-        # 解码 hex 音频数据
-        hex_audio = data.get("data", {}).get("audio", "")
-        if not hex_audio:
+        # 检查响应状态
+        base_resp = data.get("base_resp", {})
+        if base_resp.get("status_code") != 0:
             return None
 
-        audio_bytes = bytes.fromhex(hex_audio)
+        music_data = data.get("data", {})
+        if music_data.get("status") != 2:
+            return None
+
+        # 获取音频 URL 并下载
+        audio_url = music_data.get("audio", "")
+        if not audio_url:
+            return None
+
+        # 下载音频
+        audio_resp = requests.get(audio_url, timeout=60)
+        if audio_resp.status_code != 200:
+            return None
 
         # 保存为临时文件
         tmp = tempfile.NamedTemporaryFile(
             suffix=".mp3", prefix=f"treehole_{place}_{mood}_", delete=False
         )
-        tmp.write(audio_bytes)
+        tmp.write(audio_resp.content)
         tmp.close()
         return tmp.name
 

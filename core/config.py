@@ -12,7 +12,7 @@ MINIMAX_BASE_URL = "https://api.minimaxi.com"
 
 # ── 模型 ──
 CHAT_MODEL = "glm-4-flash"          # GLM 免费模型，速度快，适合对话
-MUSIC_MODEL = "music-2.6-free"      # MiniMax 音乐模型
+# MUSIC_MODEL 已移除，请在 minimax_music.py 中使用 "music-2.6"（Token Plan 用户）
 
 # ── 数据库（Streamlit Cloud 无持久文件系统，用内存数据库）──
 DB_PATH = os.environ.get("TREEHOLE_DB_PATH", ":memory:")
