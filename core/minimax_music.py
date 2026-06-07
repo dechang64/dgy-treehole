@@ -65,7 +65,7 @@ def generate_music(
             f"{MINIMAX_BASE_URL}/v1/music_generation",
             headers=headers,
             json=payload,
-            timeout=60,  # 先等60秒获取初始响应
+            timeout=180,  # 音乐生成需要较长时间，最多等3分钟
         )
         logger.info(f"API response status: {resp.status_code}")
 
