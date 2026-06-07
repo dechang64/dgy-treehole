@@ -20,12 +20,54 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# CDN: raw.githubusercontent.com — 已经是真实音频（非 LFS 指针）
-CDN_BASE = "https://raw.githubusercontent.com/dechang64/dgy-treehole/main/static/music"
+# GitHub Release — 为媒体流设计，支持 Range 请求，浏览器原生 audio 元素可直接播放
+RELEASE_BASE = "https://github.com/dechang64/dgy-treehole/releases/download/v1.0-music"
+
+# 中文名 → Release 资源名（Release API 不支持中文字符名）
+FILENAME_MAP = {
+    "潇湘馆_宁静.mp3": "xiaoxiangguan_ningjing.mp3",
+    "潇湘馆_思念.mp3": "xiaoxiangguan_sinian.mp3",
+    "潇湘馆_欢愉.mp3": "xiaoxiangguan_huanyu.mp3",
+    "潇湘馆_沉思.mp3": "xiaoxiangguan_chensi.mp3",
+    "潇湘馆_疗愈.mp3": "xiaoxiangguan_liaoyu.mp3",
+    "潇湘馆_释然.mp3": "xiaoxiangguan_shiran.mp3",
+    "蘅芜苑_宁静.mp3": "hengwuyuan_ningjing.mp3",
+    "蘅芜苑_思念.mp3": "hengwuyuan_sinian.mp3",
+    "蘅芜苑_欢愉.mp3": "hengwuyuan_huanyu.mp3",
+    "蘅芜苑_沉思.mp3": "hengwuyuan_chensi.mp3",
+    "蘅芜苑_疗愈.mp3": "hengwuyuan_liaoyu.mp3",
+    "蘅芜苑_释然.mp3": "hengwuyuan_shiran.mp3",
+    "怡红院_宁静.mp3": "yihongyuan_ningjing.mp3",
+    "怡红院_思念.mp3": "yihongyuan_sinian.mp3",
+    "怡红院_欢愉.mp3": "yihongyuan_huanyu.mp3",
+    "怡红院_沉思.mp3": "yihongyuan_chensi.mp3",
+    "怡红院_疗愈.mp3": "yihongyuan_liaoyu.mp3",
+    "怡红院_释然.mp3": "yihongyuan_shiran.mp3",
+    "稻香村_宁静.mp3": "daoxiangcun_ningjing.mp3",
+    "稻香村_思念.mp3": "daoxiangcun_sinian.mp3",
+    "稻香村_欢愉.mp3": "daoxiangcun_huanyu.mp3",
+    "稻香村_沉思.mp3": "daoxiangcun_chensi.mp3",
+    "稻香村_疗愈.mp3": "daoxiangcun_liaoyu.mp3",
+    "稻香村_释然.mp3": "daoxiangcun_shiran.mp3",
+    "藕香榭_宁静.mp3": "ouxiangxie_ningjing.mp3",
+    "藕香榭_思念.mp3": "ouxiangxie_sinian.mp3",
+    "藕香榭_欢愉.mp3": "ouxiangxie_huanyu.mp3",
+    "藕香榭_沉思.mp3": "ouxiangxie_chensi.mp3",
+    "藕香榭_疗愈.mp3": "ouxiangxie_liaoyu.mp3",
+    "藕香榭_释然.mp3": "ouxiangxie_shiran.mp3",
+    "秋爽斋_宁静.mp3": "qiushuangzhai_ningjing.mp3",
+    "秋爽斋_思念.mp3": "qiushuangzhai_sinian.mp3",
+    "秋爽斋_欢愉.mp3": "qiushuangzhai_huanyu.mp3",
+    "秋爽斋_沉思.mp3": "qiushuangzhai_chensi.mp3",
+    "秋爽斋_疗愈.mp3": "qiushuangzhai_liaoyu.mp3",
+    "秋爽斋_释然.mp3": "qiushuangzhai_shiran.mp3",
+}
 
 def get_audio_url(place: str, mood: str) -> str:
     """根据场景和情绪返回音频 URL"""
-    return f"{CDN_BASE}/{place}_{mood}.mp3"
+    chinese_name = f"{place}_{mood}.mp3"
+    asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
+    return f"{RELEASE_BASE}/{asset_name}"
 
 
 # ── 选择参数 ──
@@ -37,6 +79,7 @@ with col2:
 
 # ── 播放 ──
 audio_url = get_audio_url(place, mood)
+chinese_name = f"{place}_{mood}.mp3"
 
 st.markdown(f"""
 <div class="card" style="text-align:center;">
@@ -51,7 +94,7 @@ st.audio(audio_url, format="audio/mp3")
 # 下载按钮
 st.markdown(f"""
 <div style="text-align:center; margin-top: 1rem;">
-    <a href="{audio_url}" download="大观园_{place}_{mood}.mp3">
+        <a href="{audio_url}" download="{chinese_name}">
         <button style="background-color: #c0392b; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer;">
             📥 下载音乐
         </button>
