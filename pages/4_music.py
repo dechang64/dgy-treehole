@@ -1,15 +1,12 @@
-"""疗愈音乐 — MiniMax music-2.6 生成
+"""疗愈音乐 — 使用预生成的音乐文件
 
-功能：
-- 选择场景和情绪风格
-- AI 生成中国传统乐器疗愈音乐
-- 在线播放 + 下载
+音乐文件已预生成，直接播放，无需调用 API
 """
 
 import streamlit as st
-from core.minimax_music import generate_music, MUSIC_AVAILABLE
 from core.config import MUSIC_PLACES, MUSIC_MOODS
 import os
+from pathlib import Path
 
 st.set_page_config(page_title="疗愈音乐 · 大观园树洞", page_icon="🎵", layout="centered")
 from core.styles import inject_css; inject_css()
@@ -26,16 +23,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── 音乐功能不可用提示 ──
-if not MUSIC_AVAILABLE:
-    st.markdown("""
-<div class="card" style="text-align:center;">
-    <p style="color: #8b7355;">🎵 音乐生成需要 MiniMax API Key（可选功能）</p>
-    <p style="font-size: 0.8rem; color: #b8860b;">在 Streamlit Secrets 中配置 MINIMAX_API_KEY 即可启用</p>
-    <p style="font-size: 0.75rem; color: #8b7355; margin-top: 0.5rem;">AI 对话功能不受影响，随时可以去倾诉 🎋</p>
-</div>
-""", unsafe_allow_html=True)
-    st.stop()
+# ── 音乐目录 ──
+MUSIC_DIR = Path("static/music")
 
 # ── 选择参数 ──
 col1, col2 = st.columns(2)
@@ -44,51 +33,76 @@ with col1:
 with col2:
     mood = st.selectbox("情绪", MUSIC_MOODS, index=0)
 
-# ── 自定义描述 ──
-custom_prompt = st.text_input(
-    "自定义描述（可选）",
-    placeholder="如：雨打芭蕉、月下独酌...",
-)
+# ── 查找音乐文件 ──
+music_file = MUSIC_DIR / f"{place}_{mood}.mp3"
 
-# ── 生成 ──
-if st.button("🎵 生成疗愈音乐", type="primary", use_container_width=True):
-    prompt = custom_prompt or f"{place}的{mood}氛围"
-    with st.spinner("🎵 AI 正在为你创作音乐..."):
-        audio_path = generate_music(
-            prompt=prompt,
-            place=place,
-            mood=mood,
-        )
-
-    if audio_path and os.path.exists(audio_path):
-        st.session_state.current_audio = audio_path
-        st.session_state.audio_place = place
-        st.session_state.audio_mood = mood
-        st.rerun()
-    else:
-        st.error("音乐生成失败，请稍后再试")
-
-# ── 播放器 ──
-if "current_audio" in st.session_state:
-    audio_path = st.session_state.current_audio
-    if os.path.exists(audio_path):
-        st.markdown(f"""
+if music_file.exists():
+    # 显示音乐信息
+    file_size_mb = music_file.stat().st_size / (1024 * 1024)
+    st.markdown(f"""
 <div class="card" style="text-align:center;">
     <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎶</div>
-    <h3>{st.session_state.audio_place} · {st.session_state.audio_mood}</h3>
-    <p style="font-size: 0.8rem; color: #8b7355;">AI 专属生成</p>
+    <h3>{place} · {mood}</h3>
+    <p style="font-size: 0.8rem; color: #8b7355;">AI 专属生成 · {file_size_mb:.1f} MB</p>
 </div>
 """, unsafe_allow_html=True)
 
-        with open(audio_path, "rb") as f:
-            st.audio(f.read(), format="audio/mp3")
+    # 播放音乐
+    with open(music_file, "rb") as f:
+        st.audio(f.read(), format="audio/mp3")
 
-        with open(audio_path, "rb") as f:
-            audio_data = f.read()
-        st.download_button(
-            "📥 下载音乐",
-            data=audio_data,
-            file_name=f"大观园_{st.session_state.audio_place}_{st.session_state.audio_mood}.mp3",
-            mime="audio/mp3",
-            use_container_width=True,
-        )
+    # 下载按钮
+    with open(music_file, "rb") as f:
+        audio_data = f.read()
+    st.download_button(
+        "📥 下载音乐",
+        data=audio_data,
+        file_name=f"大观园_{place}_{mood}.mp3",
+        mime="audio/mp3",
+        use_container_width=True,
+    )
+else:
+    # 文件不存在
+    st.markdown("""
+<div class="card" style="text-align:center;">
+    <p style="color: #8b7355;">🎵 音乐文件不存在</p>
+    <p style="font-size: 0.8rem; color: #b8860b;">请联系管理员</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── 所有音乐列表 ──
+st.markdown("---")
+st.markdown("""
+<div style="text-align:center; padding: 1rem;">
+    <p style="font-size: 0.9rem; color: #d4c5a9;">🎼 所有音乐</p>
+</div>
+""", unsafe_allow_html=True)
+
+# 显示所有可用音乐
+music_files = sorted(MUSIC_DIR.glob("*.mp3"))
+if music_files:
+    # 按场景分组显示
+    scenes_dict = {}
+    for f in music_files:
+        parts = f.stem.split("_")
+        if len(parts) == 2:
+            scene, emotion = parts
+            if scene not in scenes_dict:
+                scenes_dict[scene] = []
+            scenes_dict[scene].append(emotion)
+    
+    for scene in MUSIC_PLACES:
+        if scene in scenes_dict:
+            with st.expander(f"🎋 {scene}", expanded=False):
+                for emotion in MUSIC_MOODS:
+                    if emotion in scenes_dict[scene]:
+                        file_path = MUSIC_DIR / f"{scene}_{emotion}.mp3"
+                        col1, col2 = st.columns([4, 1])
+                        with col1:
+                            st.write(f"  {emotion}")
+                        with col2:
+                            if file_path.exists():
+                                with open(file_path, "rb") as f:
+                                    st.audio(f.read(), format="audio/mp3")
+else:
+    st.info("暂无音乐文件")
