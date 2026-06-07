@@ -23,7 +23,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── 音乐目录 ──
+# ── 音乐目录（兼容本地和 Streamlit Cloud）──
+# 本地路径: static/music/
+# Streamlit Cloud: 从 repo 根目录访问
 MUSIC_DIR = Path("static/music")
 
 # ── 选择参数 ──
@@ -62,11 +64,29 @@ if music_file.exists():
         use_container_width=True,
     )
 else:
-    # 文件不存在
-    st.markdown("""
+    # 尝试从 GitHub raw URL 获取
+    github_raw_base = "https://raw.githubusercontent.com/dechang64/dgy-treehole/main/static/music"
+    github_url = f"{github_raw_base}/{place}_{mood}.mp3"
+
+    st.markdown(f"""
 <div class="card" style="text-align:center;">
-    <p style="color: #8b7355;">🎵 音乐文件不存在</p>
-    <p style="font-size: 0.8rem; color: #b8860b;">请联系管理员</p>
+    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎶</div>
+    <h3>{place} · {mood}</h3>
+    <p style="font-size: 0.8rem; color: #8b7355;">从云端加载...</p>
+</div>
+""", unsafe_allow_html=True)
+
+    # 直接使用 GitHub URL 播放
+    st.audio(github_url, format="audio/mp3")
+
+    # 下载按钮
+    st.markdown(f"""
+<div style="text-align:center; margin-top: 1rem;">
+    <a href="{github_url}" download="大观园_{place}_{mood}.mp3" class="stButton">
+        <button style="background-color: #c0392b; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer;">
+            📥 下载音乐
+        </button>
+    </a>
 </div>
 """, unsafe_allow_html=True)
 
@@ -78,31 +98,16 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 显示所有可用音乐
-music_files = sorted(MUSIC_DIR.glob("*.mp3"))
-if music_files:
-    # 按场景分组显示
-    scenes_dict = {}
-    for f in music_files:
-        parts = f.stem.split("_")
-        if len(parts) == 2:
-            scene, emotion = parts
-            if scene not in scenes_dict:
-                scenes_dict[scene] = []
-            scenes_dict[scene].append(emotion)
-    
-    for scene in MUSIC_PLACES:
-        if scene in scenes_dict:
-            with st.expander(f"🎋 {scene}", expanded=False):
-                for emotion in MUSIC_MOODS:
-                    if emotion in scenes_dict[scene]:
-                        file_path = MUSIC_DIR / f"{scene}_{emotion}.mp3"
-                        col1, col2 = st.columns([4, 1])
-                        with col1:
-                            st.write(f"  {emotion}")
-                        with col2:
-                            if file_path.exists():
-                                with open(file_path, "rb") as f:
-                                    st.audio(f.read(), format="audio/mp3")
-else:
-    st.info("暂无音乐文件")
+# GitHub raw base URL
+GITHUB_RAW_BASE = "https://raw.githubusercontent.com/dechang64/dgy-treehole/main/static/music"
+
+# 显示所有可用音乐（按场景分组）
+for scene in MUSIC_PLACES:
+    with st.expander(f"🎋 {scene}", expanded=False):
+        for emotion in MUSIC_MOODS:
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.write(f"  {emotion}")
+            with col2:
+                audio_url = f"{GITHUB_RAW_BASE}/{scene}_{emotion}.mp3"
+                st.audio(audio_url, format="audio/mp3")
