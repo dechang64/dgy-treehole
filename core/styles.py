@@ -308,6 +308,11 @@ CSS = """<style>
     50%       { transform: translateY(-8px); }
 }
 .gentle-float { animation: gentleFloat 3s ease-in-out infinite; }
+@keyframes floatUp {
+    0%,100% { transform: translateY(0px); }
+    50%       { transform: translateY(-12px); }
+}
+.float { animation: floatUp 3s ease-in-out infinite; }
 </style>"""
 
 import streamlit as st
