@@ -6,10 +6,11 @@ Model: glm-4-flash（免费，速度快，适合对话场景）
 
 import requests
 from core.config import GLM_API_KEY, GLM_BASE_URL, CHAT_MODEL, MOCK_MODE
-from core.characters import get_character
+from core.characters import get_character, build_system_prompt
 
 
 def chat(messages: list[dict], character: str = "贾宝玉",
+         personality_params: dict | None = None,
          temperature: float = 0.7, max_tokens: int = 300) -> str:
     """
     发送聊天请求到 GLM API
@@ -17,6 +18,7 @@ def chat(messages: list[dict], character: str = "贾宝玉",
     Args:
         messages: [{"role": "system"|"user"|"assistant", "content": "..."}]
         character: 角色名（用于获取 system prompt）
+        personality_params: MBTI/星座人格参数，用于调整语气风格
         temperature: 生成温度
         max_tokens: 最大生成 token 数
 
@@ -24,10 +26,9 @@ def chat(messages: list[dict], character: str = "贾宝玉",
         AI 回复文本
     """
     if MOCK_MODE:
-        return _mock_response(character, messages)
+        return _mock_response(character, messages, personality_params)
 
-    char_info = get_character(character)
-    system_prompt = char_info["system_prompt"]
+    system_prompt = build_system_prompt(character, personality_params)
 
     # 确保 system prompt 在最前面
     api_messages = [{"role": "system", "content": system_prompt}]
@@ -67,7 +68,8 @@ def chat(messages: list[dict], character: str = "贾宝玉",
         return "（出了点小问题，请稍后再试。）"
 
 
-def _mock_response(character: str, messages: list[dict]) -> str:
+def _mock_response(character: str, messages: list[dict],
+                   personality_params: dict | None = None) -> str:
     """Mock 模式：基于关键词的简单回复（用于无 API Key 时）"""
     char_info = get_character(character)
     user_msgs = [m["content"] for m in messages if m["role"] == "user"]
@@ -86,13 +88,24 @@ def _mock_response(character: str, messages: list[dict]) -> str:
     is_lost = any(w in last_msg for w in lost_words)
     is_tired = any(w in last_msg for w in tired_words)
 
+    # 人格语气 → mock 回复风格
+    tone = (personality_params or {}).get("tone", "warm")
+    short_tones = {"light", "guiding"}
+    gentle_tones = {"gentle_listening"}
+
     if is_sad:
-        return f"我听到了。你的难过是真实的，不需要假装没事。\n\n{char_info['personality'][:30]}……你愿意多说一些吗？"
+        base = "我听到了。你的难过是真实的，不需要假装没事。"
+        extra = "……你愿意多说一些吗？" if tone in gentle_tones else "你愿意告诉我发生了什么吗？"
+        return base + "\n\n" + extra
     elif is_anxious:
+        if tone in short_tones:
+            return "深呼吸。焦虑是在告诉你——这件事对你很重要。先让自己安定下来，再想怎么办。"
         return "深呼吸。你现在感受到的焦虑，是你的身体在告诉你——这件事对你很重要。\n\n不用急着解决，先让自己安定下来。"
     elif is_angry:
         return "你的愤怒是合理的。不公平的事情确实让人难以接受。\n\n你愿意告诉我发生了什么吗？我在听。"
     elif is_lost:
+        if tone in short_tones:
+            return '迷茫的时候，不需要立刻找到方向。你最近在纠结什么？'
         return '迷茫的时候，不需要立刻找到方向。有时候，承认"我不知道"本身就需要勇气。\n\n你最近在纠结什么？'
     elif is_tired:
         return "你已经很努力了。累的时候，允许自己停下来休息，这不是软弱。\n\n你有多久没有好好休息了？"

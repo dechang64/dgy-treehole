@@ -92,10 +92,11 @@ if user_input:
         "emotion": emotion,
     })
 
-    # 调用 AI
+    # 调用 AI（注入人格参数）
     response = chat(
         messages=st.session_state.chat_history,
         character=character,
+        personality_params=st.session_state.get("personality_params"),
     )
 
     st.session_state.chat_history.append({"role": "assistant", "content": response})

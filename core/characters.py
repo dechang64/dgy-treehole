@@ -191,3 +191,73 @@ def get_character_by_scene(scene: str) -> dict:
 
 def get_all_characters() -> list[dict]:
     return list(CHARACTERS.values())
+
+
+# ═══════════════════════════════════════════════════════════
+#  人格语气注入 — 根据 personality_params 调整系统提示词
+# ═══════════════════════════════════════════════════════════
+
+TONE_INSTRUCTIONS = {
+    "gentle_listening": [
+        "语气调整：说话要轻柔缓慢，多用省略号。不要急于给建议。",
+        "回复风格：回复可以稍长一些（150-250字），要有留白和停顿感。",
+        "特别提示：先共情，再引导。不要打断对方。",
+    ],
+    "warm": [
+        "语气调整：说话要温暖真诚，让人感到被接纳。不要过于理性。",
+        "回复风格：中等长度（100-180字），以肯定和鼓励为主。",
+        "特别提示：每句话要让对方感到"被看见"。",
+    ],
+    "light": [
+        "语气调整：说话可以轻松一些，偶尔用感叹号。不要太沉重。",
+        "回复风格：偏短（60-120字），简洁有力，避免长篇大论。",
+        "特别提示：先让气氛轻松一些，但不要无视对方的情绪。",
+    ],
+    "guiding": [
+        "语气调整：说话要清晰有条理，善于提问。不要绕弯子。",
+        "回复风格：中等偏短（80-150字），以引导性问题为主。",
+        "特别提示：多用"你觉得……？"、"如果你……会怎样？"来引导思考。",
+    ],
+}
+
+REPLY_LENGTH_OVERRIDES = {
+    "short": "回复控制在60-100字，简短有力。",
+    "medium": "回复控制在100-180字，中等长度。",
+    "medium_long": "回复控制在150-250字，可以稍展开一些。",
+}
+
+
+def build_system_prompt(character: str, personality_params: dict | None = None) -> str:
+    """
+    构建角色系统提示词，可选注入人格语气偏好。
+
+    Args:
+        character: 角色名
+        personality_params: {"tone": "gentle_listening", "reply_length": "medium_long", ...}
+    """
+    char_info = get_character(character)
+    base = char_info["system_prompt"]
+
+    if not personality_params:
+        return base
+
+    tone = personality_params.get("tone", "")
+    reply_len = personality_params.get("reply_length", "")
+
+    injections = []
+
+    if tone in TONE_INSTRUCTIONS:
+        injections.extend(TONE_INSTRUCTIONS[tone])
+
+    if reply_len in REPLY_LENGTH_OVERRIDES:
+        injections.append(REPLY_LENGTH_OVERRIDES[reply_len])
+
+    if not injections:
+        return base
+
+    injection_text = "\n\n" + "\n".join(injections)
+    # 在原 system prompt 的"注意事项"部分之前注入
+    if "注意事项：" in base:
+        return base.replace("注意事项：", injection_text + "\n\n注意事项：")
+    else:
+        return base + injection_text
