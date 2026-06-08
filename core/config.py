@@ -59,6 +59,7 @@ RELEASE_METHODS = {
     "lake":  {"icon": "💧", "title": "已沉入湖底", "sub": "湖水会记住它"},
     "petal": {"icon": "🌸", "title": "已化为花瓣", "sub": "花瓣会替你开"},
     "smoke": {"icon": "🕯️", "title": "已燃为青烟", "sub": "烟会替你说"},
+    "silent":{"icon": "🎧", "title": "静静聆听",     "sub": "什么都不做，只是听"},
 }
 
 # ── 情绪分类 ──

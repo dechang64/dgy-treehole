@@ -9,14 +9,99 @@
 
 import random
 import uuid
+import requests
+import tempfile
 import streamlit as st
-from core.config import RELEASE_METHODS, EMOTION_MUSIC_MAP
+from core.config import RELEASE_METHODS, EMOTION_MUSIC_MAP, MUSIC_PLACES, MUSIC_MOODS
 from core.emotion_detector import detect_emotion, compute_session_emotion_profile
 from core.fl_engine import submit_local_stats
 from core.db import record_treehole, get_treehole_stats
 
 st.set_page_config(page_title="匿名树洞 · 大观园树洞", page_icon="🌳", layout="centered")
 from core.styles import inject_css; inject_css()
+# Layer 1: 树皮纹理背景
+st.markdown('<div class="treehole-body">', unsafe_allow_html=True)
+
+# GitHub Release — 音乐文件（同 music.py）
+# GitHub Release — 音乐文件（同 music.py）
+RELEASE_BASE = "https://github.com/dechang64/dgy-treehole/releases/download/v1.0-music"
+# GitHub Release — ambient音效（同 Release）
+RELEASE_AMBIENT_BASE = "https://github.com/dechang64/dgy-treehole/releases/download/v1.0-music"
+FILENAME_MAP = {
+    "潇湘馆_宁静.mp3": "xiaoxiangguan_ningjing.mp3",
+    "潇湘馆_思念.mp3": "xiaoxiangguan_sinian.mp3",
+    "潇湘馆_欢愉.mp3": "xiaoxiangguan_huanyu.mp3",
+    "潇湘馆_沉思.mp3": "xiaoxiangguan_chensi.mp3",
+    "潇湘馆_疗愈.mp3": "xiaoxiangguan_liaoyu.mp3",
+    "潇湘馆_释然.mp3": "xiaoxiangguan_shiran.mp3",
+    "蘅芜苑_宁静.mp3": "hengwuyuan_ningjing.mp3",
+    "蘅芜苑_思念.mp3": "hengwuyuan_sinian.mp3",
+    "蘅芜苑_欢愉.mp3": "hengwuyuan_huanyu.mp3",
+    "蘅芜苑_沉思.mp3": "hengwuyuan_chensi.mp3",
+    "蘅芜苑_疗愈.mp3": "hengwuyuan_liaoyu.mp3",
+    "蘅芜苑_释然.mp3": "hengwuyuan_shiran.mp3",
+    "怡红院_宁静.mp3": "yihongyuan_ningjing.mp3",
+    "怡红院_思念.mp3": "yihongyuan_sinian.mp3",
+    "怡红院_欢愉.mp3": "yihongyuan_huanyu.mp3",
+    "怡红院_沉思.mp3": "yihongyuan_chensi.mp3",
+    "怡红院_疗愈.mp3": "yihongyuan_liaoyu.mp3",
+    "怡红院_释然.mp3": "yihongyuan_shiran.mp3",
+    "稻香村_宁静.mp3": "daoxiangcun_ningjing.mp3",
+    "稻香村_思念.mp3": "daoxiangcun_sinian.mp3",
+    "稻香村_欢愉.mp3": "daoxiangcun_huanyu.mp3",
+    "稻香村_沉思.mp3": "daoxiangcun_chensi.mp3",
+    "稻香村_疗愈.mp3": "daoxiangcun_liaoyu.mp3",
+    "稻香村_释然.mp3": "daoxiangcun_shiran.mp3",
+    "藕香榭_宁静.mp3": "ouxiangxie_ningjing.mp3",
+    "藕香榭_思念.mp3": "ouxiangxie_sinian.mp3",
+    "藕香榭_欢愉.mp3": "ouxiangxie_huanyu.mp3",
+    "藕香榭_沉思.mp3": "ouxiangxie_chensi.mp3",
+    "藕香榭_疗愈.mp3": "ouxiangxie_liaoyu.mp3",
+    "藕香榭_释然.mp3": "ouxiangxie_shiran.mp3",
+    "秋爽斋_宁静.mp3": "qiushuangzhai_ningjing.mp3",
+    "秋爽斋_思念.mp3": "qiushuangzhai_sinian.mp3",
+    "秋爽斋_欢愉.mp3": "qiushuangzhai_huanyu.mp3",
+    "秋爽斋_沉思.mp3": "qiushuangzhai_chensi.mp3",
+    "秋爽斋_疗愈.mp3": "qiushuangzhai_liaoyu.mp3",
+    "秋爽斋_释然.mp3": "qiushuangzhai_shiran.mp3",
+}
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_audio_file(place: str, mood: str) -> str | None:
+    chinese_name = f"{place}_{mood}.mp3"
+    asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
+    url = f"{RELEASE_BASE}/{asset_name}"
+    try:
+        resp = requests.get(url, timeout=60, stream=True)
+        resp.raise_for_status()
+        tmp = tempfile.NamedTemporaryFile(
+            suffix=".mp3", prefix=f"treehole_{place}_{mood}_", delete=False
+        )
+        for chunk in resp.iter_content(chunk_size=65536):
+            tmp.write(chunk)
+        tmp.close()
+        return tmp.name
+    except Exception:
+        return None
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_ambient_file(method: str) -> str | None:
+    """下载 ambient音效文件用于释放动画"""
+    url = f"{RELEASE_AMBIENT_BASE}/{method}.mp3"
+    try:
+        resp = requests.get(url, timeout=30, stream=True)
+        resp.raise_for_status()
+        tmp = tempfile.NamedTemporaryFile(
+            suffix=".mp3", prefix=f"ambient_{method}_", delete=False
+        )
+        for chunk in resp.iter_content(chunk_size=32768):
+            tmp.write(chunk)
+        tmp.close()
+        return tmp.name
+    except Exception:
+        return None
 
 
 # ═══════════════════════════════════════════════════════════
@@ -163,7 +248,7 @@ treehole_text = st.text_area(
 # ── 释放方式 ──
 if treehole_text:
     st.markdown("### 选择释放方式")
-    cols = st.columns(4)
+    cols = st.columns(5)
     selected_method = None
 
     for i, (key, info) in enumerate(RELEASE_METHODS.items()):
@@ -195,39 +280,26 @@ if treehole_text:
         except Exception:
             pass
 
-        # 释放动画
-        animations = {
-            "wind": """
-<div style="text-align:center; padding: 2rem;" class="fade-in">
-    <div style="font-size: 4rem;" class="float">🍃</div>
-    <h3 style="color: #2d6a4f; margin-top: 1rem;">已随风飘散</h3>
-    <p style="color: #8b7355;">风会带走它</p>
-</div>""",
-            "lake": """
-<div style="text-align:center; padding: 2rem;" class="fade-in">
-    <div style="font-size: 4rem;" class="float">💧</div>
-    <h3 style="color: #2d6a4f; margin-top: 1rem;">已沉入湖底</h3>
-    <p style="color: #8b7355;">湖水会记住它</p>
-</div>""",
-            "petal": """
-<div style="text-align:center; padding: 2rem;" class="fade-in">
-    <div style="font-size: 4rem;" class="float">🌸</div>
-    <h3 style="color: #c0392b; margin-top: 1rem;">已化为花瓣</h3>
-    <p style="color: #8b7355;">花瓣会替你开</p>
-</div>""",
-            "smoke": """
-<div style="text-align:center; padding: 2rem;" class="fade-in">
-    <div style="font-size: 4rem;" class="float">🕯️</div>
-    <h3 style="color: #8b7355; margin-top: 1rem;">已燃为青烟</h3>
-    <p style="color: #8b7355;">烟会替你说</p>
-</div>""",
-        }
+        # ── Layer 3: 静默模式 ──
+        if selected_method == "silent":
+            music_scene, music_mood = get_music_recommendation(emotion)
+            audio_path = get_audio_file(music_scene, music_mood)
 
-        st.markdown(animations[selected_method], unsafe_allow_html=True)
+            st.markdown("""
+<div style="text-align:center; padding: 2rem;" class="fade-in">
+    <div style="font-size: 3.5rem;" class="gentle-float">🎧</div>
+    <h3 style="color: #b8860b; margin-top: 1rem;">静静聆听</h3>
+    <p style="color: #8b7355;">什么都不做，只是听</p>
+</div>""", unsafe_allow_html=True)
 
-        # 个性化疗愈回复
-        reply = get_healing_reply(emotion, personality_tone, len(treehole_text))
-        st.markdown(f"""
+            if audio_path:
+                st.audio(audio_path, format="audio/mp3")
+            else:
+                st.warning("音乐加载失败，请检查网络后重试。")
+
+            # 个性化疗愈回复
+            reply = get_healing_reply(emotion, personality_tone, len(treehole_text))
+            st.markdown(f"""
 <div class="card" style="text-align:center; margin-top: 0.5rem;">
     <p style="font-style:italic; color: #8b7355; line-height: 1.8;">
         "{reply}"
@@ -235,9 +307,66 @@ if treehole_text:
 </div>
 """, unsafe_allow_html=True)
 
-        # 音乐推荐
-        music_scene, music_mood = get_music_recommendation(emotion)
-        st.markdown(f"""
+            st.markdown(f"""
+<div style="text-align:center; margin-top: 0.5rem;">
+    <span style="font-size: 0.8rem; color: #8b7355;">为你推荐 · </span>
+    <a href="/pages/4_music.py" target="_self">
+        <button style="background-color: #2d6a4f; color: white; padding: 0.4rem 0.8rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.8rem;">
+            🎵 {music_scene} · {music_mood}
+        </button>
+    </a>
+</div>
+""", unsafe_allow_html=True)
+
+        else:
+            # ── 普通释放动画 ──
+            animations = {
+                "wind": """
+<div style="text-align:center; padding: 2rem;" class="fade-in">
+    <div style="font-size: 4rem;" class="float">🍃</div>
+    <h3 style="color: #2d6a4f; margin-top: 1rem;">已随风飘散</h3>
+    <p style="color: #8b7355;">风会带走它</p>
+</div>""",
+                "lake": """
+<div style="text-align:center; padding: 2rem;" class="fade-in">
+    <div style="font-size: 4rem;" class="float">💧</div>
+    <h3 style="color: #2d6a4f; margin-top: 1rem;">已沉入湖底</h3>
+    <p style="color: #8b7355;">湖水会记住它</p>
+</div>""",
+                "petal": """
+<div style="text-align:center; padding: 2rem;" class="fade-in">
+    <div style="font-size: 4rem;" class="float">🌸</div>
+    <h3 style="color: #c0392b; margin-top: 1rem;">已化为花瓣</h3>
+    <p style="color: #8b7355;">花瓣会替你开</p>
+</div>""",
+                "smoke": """
+<div style="text-align:center; padding: 2rem;" class="fade-in">
+    <div style="font-size: 4rem;" class="float">🕯️</div>
+    <h3 style="color: #8b7355; margin-top: 1rem;">已燃为青烟</h3>
+    <p style="color: #8b7355;">烟会替你说</p>
+</div>""",
+            }
+
+            st.markdown(animations[selected_method], unsafe_allow_html=True)
+
+            # ── Layer 2: ambient音效（静默模式除外）──
+            ambient_path = get_ambient_file(selected_method)
+            if ambient_path:
+                st.audio(ambient_path, format="audio/mp3")
+
+            # 个性化疗愈回复
+            reply = get_healing_reply(emotion, personality_tone, len(treehole_text))
+            st.markdown(f"""
+<div class="card" style="text-align:center; margin-top: 0.5rem;">
+    <p style="font-style:italic; color: #8b7355; line-height: 1.8;">
+        "{reply}"
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+            # 音乐推荐
+            music_scene, music_mood = get_music_recommendation(emotion)
+            st.markdown(f"""
 <div style="text-align:center; margin-top: 0.8rem;">
     <span style="font-size: 0.8rem; color: #8b7355;">为你推荐 · </span>
     <a href="/pages/4_music.py" target="_self">
@@ -265,3 +394,6 @@ if total_count > 0:
     <span style="color: #b8860b;">联邦学习保护了每一位朋友的隐私</span>
 </div>
 """, unsafe_allow_html=True)
+
+# 关闭树皮纹理 wrapper
+st.markdown("</div>", unsafe_allow_html=True)

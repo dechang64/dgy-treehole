@@ -247,6 +247,67 @@ CSS = """<style>
     to { opacity: 1; transform: translateY(0); }
 }
 .fade-in { animation: fadeIn 0.5s ease-out; }
+
+/* ── 树洞页面树皮纹理背景 ── */
+.treehole-body {
+    position: relative;
+}
+/* 用伪元素叠加树皮纹理 */
+.treehole-body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        /* 树皮竖纹 */
+        repeating-linear-gradient(
+            87deg,
+            transparent 0px,
+            transparent 18px,
+            rgba(44,24,16,0.04) 18px,
+            rgba(44,24,16,0.04) 20px,
+            transparent 20px,
+            transparent 48px
+        ),
+        /* 横向年轮纹理 */
+        repeating-linear-gradient(
+            0deg,
+            transparent 0px,
+            transparent 12px,
+            rgba(44,24,16,0.025) 12px,
+            rgba(44,24,16,0.025) 14px,
+            transparent 14px,
+            transparent 36px
+        ),
+        /* 整体暗角，让边缘更像树洞入口 */
+        radial-gradient(
+            ellipse at 50% 30%,
+            transparent 20%,
+            rgba(44,24,16,0.08) 100%
+        );
+    pointer-events: none;
+    z-index: 0;
+}
+/* 确保内容在纹理之上 */
+.treehole-body > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* ── 静默释放模式动画 ── */
+@keyframes pulseRing {
+    0%   { box-shadow: 0 0 0 0 rgba(184,134,11,0.4); }
+    70%  { box-shadow: 0 0 0 16px rgba(184,134,11,0); }
+    100% { box-shadow: 0 0 0 0 rgba(184,134,11,0); }
+}
+.pulse-ring {
+    animation: pulseRing 2s ease-out infinite;
+    border-radius: 50%;
+}
+@keyframes gentleFloat {
+    0%,100% { transform: translateY(0px); }
+    50%       { transform: translateY(-8px); }
+}
+.gentle-float { animation: gentleFloat 3s ease-in-out infinite; }
 </style>"""
 
 import streamlit as st

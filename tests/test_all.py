@@ -17,10 +17,10 @@ from core.db import init_db, create_post, get_posts, resonate_post, get_emotion_
 def test_config():
     """配置常量完整性"""
     assert len(SCENES) == 6, f"Expected 6 scenes, got {len(SCENES)}"
-    assert len(RELEASE_METHODS) == 4, f"Expected 4 release methods, got {len(RELEASE_METHODS)}"
+    assert len(RELEASE_METHODS) == 5, f"Expected 5 release methods, got {len(RELEASE_METHODS)}"
     assert len(EMOTIONS) == 9, f"Expected 9 emotions, got {len(EMOTIONS)}"
     assert all(s["name"] in ["潇湘馆","蘅芜苑","怡红院","稻香村","藕香榭","秋爽斋"] for s in SCENES)
-    print("  ✅ config: 6 scenes, 4 methods, 9 emotions")
+    print("  ✅ config: 6 scenes, 5 methods, 9 emotions")
 
 
 def test_characters():
