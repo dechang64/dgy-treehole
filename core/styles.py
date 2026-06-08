@@ -409,6 +409,37 @@ CSS = """<style>
 .falling-leaf:nth-child(2) { animation-delay: 1.5s; }
 .falling-leaf:nth-child(3) { animation-delay: 3s; }
 
+/* ── 导航：flex-wrap 自动换行 ── */
+.nav-flex-wrap {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+    margin: 0.4rem 0 !important;
+    justify-content: flex-start;
+}
+.nav-flex-wrap [data-testid="stPageLink-NavLink"] {
+    flex: 0 1 auto !important;
+    display: inline-block !important;
+    margin: 0 !important;
+}
+/* 桌面端：每个按钮均分 7 等分 (大约 14% 一行 7 个) */
+@media (min-width: 769px) {
+    .nav-flex-wrap [data-testid="stPageLink-NavLink"] {
+        flex: 0 1 calc(14.28% - 0.4rem) !important;
+        min-width: 90px !important;
+        text-align: center;
+    }
+}
+/* 移动端：每个按钮 30% (一行 3 个) */
+@media (max-width: 768px) {
+    .nav-flex-wrap [data-testid="stPageLink-NavLink"] {
+        flex: 0 1 calc(33.33% - 0.3rem) !important;
+        text-align: center;
+        font-size: 0.78rem !important;
+        padding: 0.4rem 0.2rem !important;
+    }
+}
+
 /* ── 移动端适配 (max-width: 768px) ── */
 @media (max-width: 768px) {
     /* 整体容器窄一点 */

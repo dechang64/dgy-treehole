@@ -314,11 +314,12 @@ st.markdown("""
 
 # ═══════════════════════════════════════════════════════════
 #  导航（7个功能入口）
-#  用 st.page_link 替代 st.button + switch_page
-#  原因：st.switch_page 不能在 st.columns() context 内调用（Streamlit 限制）
-#  page_link 是官方推荐的页内导航方案，渲染为可点击链接
-#  4 列 × 2 行 (8 格) — desktop 横排 4 个，mobile 也撑得下
+#  st.page_link 包在 flex-wrap 容器里，浏览器自然换行
+#  原因：st.columns 在 mobile 强制降级为单列（跟列数无关）
+#  streamlit page_link 在 <a> 上加 [data-testid="stPageLink-NavLink"] class
+#  外层 .nav-flex-wrap 用 flex-wrap:wrap 让窄屏自动 2-3 个一行
 # ═══════════════════════════════════════════════════════════
+st.markdown('<div class="nav-flex-wrap">', unsafe_allow_html=True)
 nav_items = [
     ("💬", "倾诉", "1_chat"),
     ("🌳", "树洞", "2_treehole"),
@@ -327,30 +328,13 @@ nav_items = [
     ("🔮", "MBTI", "5_mbti"),
     ("⭐", "星座", "7_zodiac"),
     ("📊", "洞察", "6_insight"),
-    ("", "", ""),  # 占位空 cell
 ]
-# 第一行 4 个
-row1 = st.columns(4)
-for i in range(4):
-    icon, label, page = nav_items[i]
-    with row1[i]:
-        if icon and label and page:
-            st.page_link(
-                f"pages/{page}.py",
-                label=f"{icon} {label}",
-                use_container_width=True,
-            )
-# 第二行 4 个
-row2 = st.columns(4)
-for i in range(4):
-    icon, label, page = nav_items[i + 4]
-    with row2[i]:
-        if icon and label and page:
-            st.page_link(
-                f"pages/{page}.py",
-                label=f"{icon} {label}",
-                use_container_width=True,
-            )
+for icon, label, page in nav_items:
+    st.page_link(
+        f"pages/{page}.py",
+        label=f"{icon} {label}",
+    )
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════
 #  9大场景（6 经典 + 3 新增：栊翠庵/缀锦楼/紫菱洲）
