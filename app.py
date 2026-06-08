@@ -5,7 +5,7 @@ Streamlit + MiniMax API + 联邦学习
 """
 
 import streamlit as st
-from core.config import SCENES, MOCK_MODE
+from core.config import SCENES, MOCK_MODE, EMOTION_SCENE_MAP, SCENE_MAP
 from core.db import init_db
 
 # ── 初始化数据库（建表，幂等）──
@@ -325,6 +325,41 @@ for i, (icon, label) in enumerate(nav_items):
 #  6大场景（对齐原版，展示 mood + style）
 # ═══════════════════════════════════════════════════════════
 st.markdown("### 🏯 选择你的场景")
+
+# ═══════════════════════════════════════════════════════════
+#  情绪入口（可选，非强制）
+# ═══════════════════════════════════════════════════════════
+_entry_emotions = ["悲伤", "焦虑", "愤怒", "迷茫", "疲惫", "孤独", "平静"]
+_entry_cols = st.columns(len(_entry_emotions))
+for i, emo in enumerate(_entry_emotions):
+    with _entry_cols[i]:
+        if st.button(f"{emo}", key=f"emo_pick_{emo}", use_container_width=True):
+            st.session_state.selected_emotion = emo
+            # 根据情绪自动进入推荐场景
+            if emo in EMOTION_SCENE_MAP:
+                rec = EMOTION_SCENE_MAP[emo]
+                st.session_state.current_scene = rec["scene"]
+                # 找到该场景对应的角色
+                scene_info = SCENE_MAP.get(rec["scene"], {})
+                st.session_state.chat_character = scene_info.get("char", "贾宝玉")
+                st.session_state.chat_history = []
+                st.switch_page("pages/1_chat.py")
+
+# 如果用户已选了情绪，显示推荐信息
+if "selected_emotion" in st.session_state:
+    emo = st.session_state.selected_emotion
+    if emo in EMOTION_SCENE_MAP:
+        rec = EMOTION_SCENE_MAP[emo]
+        st.markdown(f"""
+<div class="card" style="border-left: 3px solid #b8860b; padding: 0.6rem 0.8rem;">
+    <div style="font-size: 0.85rem; color: #8b7355;">
+        {rec["icon"]} {rec["msg"]}——
+        <a href="#" onclick="document.querySelectorAll('[data-testid=\"stButton\"] button')[0].click()">
+            <strong>进入{rec["scene"]}</strong>
+        </a>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # 纯 CSS grid 渲染6个场景卡片，保证尺寸统一
 _cards = ""

@@ -4,17 +4,101 @@
 - 释放即消失，内容不持久化
 - 4种释放方式（风/湖/花/烟）
 - 仅统计聚合数据用于联邦学习
+- 与倾诉旅程串联：感知情绪上下文，给出个性化疗愈回复
 """
 
+import random
+import uuid
 import streamlit as st
-from core.config import RELEASE_METHODS
-from core.emotion_detector import detect_emotion
+from core.config import RELEASE_METHODS, EMOTION_MUSIC_MAP
+from core.emotion_detector import detect_emotion, compute_session_emotion_profile
 from core.fl_engine import submit_local_stats
 from core.db import record_treehole, get_treehole_stats
-import uuid
 
 st.set_page_config(page_title="匿名树洞 · 大观园树洞", page_icon="🌳", layout="centered")
 from core.styles import inject_css; inject_css()
+
+
+# ═══════════════════════════════════════════════════════════
+#  个性化疗愈回复引擎
+# ═══════════════════════════════════════════════════════════
+
+def get_healing_reply(emotion: str, personality_tone: str, word_count: int) -> str:
+    """根据情绪 + 人格语气 + 内容长度生成个性化疗愈回复"""
+
+    # 基础回复（按人格语气分组）
+    tone_replies = {
+        "gentle_listening": [
+            "你愿意把这些话说出来，本身就是很勇敢的事。",
+            "说出来就够了。你不需要解释，不需要辩护，只需要被听见。",
+            "这些话藏在心里很久了吧。今天你说出来了，这就够了。",
+        ],
+        "warm": [
+            "你已经很棒了。能承认自己的感受，本身就是一种力量。",
+            "有些话不需要被理解，只需要被说出来。你做到了。",
+            "你已经撑了很久了。今天，就让这些话有个出口吧。",
+        ],
+        "light": [
+            "好，说出来了就好了。",
+            "有些事情，说出来就不一样了。",
+            "行了，剩下的交给风和湖水吧。",
+        ],
+        "guiding": [
+            "你能识别自己的情绪，这很重要。你已经迈出了第一步。",
+            "愿意面对自己的感受，本身就是成熟的标志。",
+            "你不需要一个人扛。但今天，你选择了说出来——这很了不起。",
+        ],
+    }
+
+    # 情绪补充（接在基础回复后）
+    emotion_addons = {
+        "悲伤": "悲伤不是软弱，它是爱过的证据。",
+        "焦虑": "不安的时候，允许自己不安，就已经是在照顾自己了。",
+        "愤怒": "有情绪是正常的。你的感受是真实的，不需要被评判。",
+        "迷茫": "不知道方向也没关系。有时候，走着走着，路就出现了。",
+        "疲惫": "你已经很努力了。今天，就让自己停一停吧。",
+        "孤独": "孤独是一种感受，不是事实。你并不孤单。",
+        "平静": "平静也是一种力量——它意味着你不需要依赖外界的回应。",
+        "感恩": "能感受到感恩的人，内心一定是柔软的。",
+        "期待": "有期待的人，说明还没有放弃。",
+    }
+
+    # 随机选一条基础回复
+    tone_key = personality_tone if personality_tone in tone_replies else "warm"
+    base = random.choice(tone_replies.get(tone_key, tone_replies["warm"]))
+
+    # 情绪补充（悲伤/焦虑/疲惫优先触发，其他随机）
+    addon = ""
+    priority_emotions = ["悲伤", "焦虑", "疲惫", "愤怒"]
+    if emotion in priority_emotions:
+        addon = " " + random.choice([emotion_addons.get(e, "") for e in [emotion]])
+    elif emotion in emotion_addons and random.random() > 0.4:
+        addon = " " + random.choice([emotion_addons[emotion]])
+
+    return (base + addon).strip()
+
+
+def get_music_recommendation(emotion: str) -> tuple[str, str]:
+    """根据情绪推荐音乐场景+情绪"""
+    if emotion in EMOTION_MUSIC_MAP:
+        mood = EMOTION_MUSIC_MAP[emotion]["primary"]
+    else:
+        mood = "疗愈"
+
+    # 悲伤/孤独 → 怡红院（温暖），焦虑/疲惫 → 稻香村（宁静）
+    scene_map = {
+        "悲伤": "怡红院",
+        "孤独": "怡红院",
+        "焦虑": "稻香村",
+        "疲惫": "稻香村",
+        "迷茫": "潇湘馆",
+        "愤怒": "藕香榭",
+        "平静": "稻香村",
+        "感恩": "怡红院",
+        "期待": "藕香榭",
+    }
+    scene = scene_map.get(emotion, "稻香村")
+    return scene, mood
 
 # ── 初始化 session ──
 if "session_id" not in st.session_state:
@@ -31,6 +115,40 @@ st.markdown("""
     <p style="font-size: 0.85rem; color: #d4c5a9;">说出你的心事，然后让它随风而去</p>
     <p style="font-size: 0.75rem; color: #8b7355; margin-top: 0.3rem;">🔒 你的话不会被存储，释放即消失</p>
     <p style="font-size: 0.7rem; color: #b8860b; margin-top: 0.2rem;">💡 想让别人看到？去「匿名共鸣」发布，那里是匿名的</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── 情绪上下文（来自倾诉旅程）──
+chat_history = st.session_state.get("chat_history", [])
+personality_tone = st.session_state.get("personality_params", {}).get("tone", "warm")
+personality_source = st.session_state.get("personality_source", "")
+current_scene = st.session_state.get("current_scene", "")
+personality_tag = ""
+if personality_source == "mbti":
+    personality_tag = st.session_state.get("personality_type", "")
+
+# 如果有对话历史，显示情绪上下文
+if chat_history:
+    profile = compute_session_emotion_profile(chat_history)
+    if profile:
+        top_emotion = max(profile, key=profile.get)
+        top_score = profile[top_emotion]
+        msg_count = len([m for m in chat_history if m.get("role") == "user"])
+
+        context_lines = [f"你在{current_scene or '这里'}倾诉了 {msg_count} 句话"]
+        if top_score > 0.3:
+            context_lines.append(f"主要感到「{top_emotion}」（{top_score:.0%}）")
+
+        context_text = "，".join(context_lines)
+
+        if personality_tag:
+            personality_tag_html = f'<span class="tag">{personality_tag}</span>'
+        else:
+            personality_tag_html = ""
+
+        st.markdown(f"""
+<div class="card" style="border-left: 3px solid #2d6a4f; padding: 0.8rem;">
+    <div style="font-size: 0.78rem; color: #8b7355;">{context_text}{personality_tag_html}</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -107,21 +225,26 @@ if treehole_text:
 
         st.markdown(animations[selected_method], unsafe_allow_html=True)
 
-        # 疗愈回复
-        replies = [
-            "说出来就好了。有些事情，不需要被记住，只需要被释放。",
-            "你已经很勇敢了。把心事说出来，本身就是一种力量。",
-            "风会带走它，但你留下的勇气会留下来。",
-            "每一次释放，都是一次新生。",
-            "你不需要独自承受。但此刻，你选择了面对，这很了不起。",
-            "有些话不需要回应，只需要一个出口。你找到了。",
-        ]
-        import random
+        # 个性化疗愈回复
+        reply = get_healing_reply(emotion, personality_tone, len(treehole_text))
         st.markdown(f"""
-<div class="card" style="text-align:center; margin-top: 1rem;">
+<div class="card" style="text-align:center; margin-top: 0.5rem;">
     <p style="font-style:italic; color: #8b7355; line-height: 1.8;">
-        "{random.choice(replies)}"
+        "{reply}"
     </p>
+</div>
+""", unsafe_allow_html=True)
+
+        # 音乐推荐
+        music_scene, music_mood = get_music_recommendation(emotion)
+        st.markdown(f"""
+<div style="text-align:center; margin-top: 0.8rem;">
+    <span style="font-size: 0.8rem; color: #8b7355;">为你推荐 · </span>
+    <a href="/pages/4_music.py" target="_self">
+        <button style="background-color: #2d6a4f; color: white; padding: 0.4rem 0.8rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.8rem;">
+            🎵 {music_scene} · {music_mood}
+        </button>
+    </a>
 </div>
 """, unsafe_allow_html=True)
 
