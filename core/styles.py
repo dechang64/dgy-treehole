@@ -409,6 +409,37 @@ CSS = """<style>
 .falling-leaf:nth-child(2) { animation-delay: 1.5s; }
 .falling-leaf:nth-child(3) { animation-delay: 3s; }
 
+/* ── 场景卡片网格 (与按钮视觉融合) ── */
+.scene-card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin: 0.6rem 0 0.4rem;
+}
+.scene-card-cta {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #b8860b;
+    font-weight: 500;
+    text-align: right;
+}
+@media (max-width: 768px) {
+    .scene-card-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── 场景按钮：紧凑 + 浅金边框，视觉延续卡片 ── */
+.scene-btn-grid [data-testid="stButton"] button {
+    margin-top: 0 !important;
+    margin-bottom: 0.3rem !important;
+    background: #f5f0e8 !important;
+    color: #b8860b !important;
+    border: 1px solid #b8860b !important;
+    font-size: 0.85rem !important;
+    padding: 0.4rem 0.6rem !important;
+}
+
 /* ── 导航：flex-wrap 自动换行 ── */
 .nav-flex-wrap {
     display: flex !important;

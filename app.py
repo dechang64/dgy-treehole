@@ -382,37 +382,40 @@ if "selected_emotion" in st.session_state:
 </div>
 """, unsafe_allow_html=True)
 
-# 纯 CSS grid 渲染9个场景卡片，保证尺寸统一
+# 纯 CSS grid 渲染9个场景卡片 + 隐藏的全卡片点击区
+# 关键: 卡片本身 HTML 仅展示信息, 真正的"点击"由一个铺满卡片的透明按钮触发
+# 避免 streamlit page_link 在 HTML <a> 里不能触发 SPA 路由的问题
+# 视觉: 卡片右下角小箭头 "→" 提示可点
 # 2 列布局 — desktop 和 mobile 都友好
-_cards = ""
+_cards_html = '<div class="scene-card-grid">'
 for scene in SCENES:
-    _cards += f"""
+    _cards_html += f"""
 <div class="scene-card">
-    <div style="font-size: 1.8rem; margin-bottom: 0.3rem;">{scene['icon']}</div>
-    <div style="font-weight: 600; font-size: 1rem; color: #2c1810;">{scene['name']}</div>
-    <div style="font-size: 0.8rem; color: #8b7355; margin-top: 0.2rem;">{scene['desc']}</div>
-    <div style="font-size: 0.75rem; color: #b8860b; margin-top: 0.2rem;">{scene['mood']} · {scene['style']}</div>
-    <div style="margin-top: 0.5rem;">
-        <span class="tag">倾听者：{scene['char']}</span>
-        <span class="tag">{scene['theory']}</span>
+    <div class="scene-card-inner">
+        <div style="font-size: 1.8rem; margin-bottom: 0.3rem;">{scene['icon']}</div>
+        <div style="font-weight: 600; font-size: 1rem; color: #2c1810;">{scene['name']}</div>
+        <div style="font-size: 0.8rem; color: #8b7355; margin-top: 0.2rem;">{scene['desc']}</div>
+        <div style="font-size: 0.75rem; color: #b8860b; margin-top: 0.2rem;">{scene['mood']} · {scene['style']}</div>
+        <div style="margin-top: 0.5rem;">
+            <span class="tag">倾听者：{scene['char']}</span>
+            <span class="tag">{scene['theory']}</span>
+        </div>
+        <div class="scene-card-cta">进入 →</div>
     </div>
 </div>"""
-st.markdown(f"""
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin:0.8rem 0;">
-{_cards}
-</div>
-""", unsafe_allow_html=True)
+_cards_html += '</div>'
+st.markdown(_cards_html, unsafe_allow_html=True)
 
-# 场景选择按钮：2 列 × 5 行（mobile 也好读，desktop 也紧凑）
-# st.button + st.switch_page 在 columns context 仍 OK（mobile 列降级后等价 top-level）
-# streamlit 在 mobile viewport 自动调整 column 宽度
+# 隐藏按钮 grid (铺在卡片下面, 全透明覆盖) — 用 st.button 触发 switch_page
+# 桌面 2 列, mobile streamlit 自动降级为 1 列
+# 按钮文案简短避免与卡片信息重复
 st.markdown('<div class="scene-btn-grid">', unsafe_allow_html=True)
 for i in range(0, len(SCENES), 2):
     cols = st.columns(2)
     for j, scene in enumerate(SCENES[i:i+2]):
         with cols[j]:
             if st.button(
-                f"进入{scene['name']} →",
+                f"开始倾诉 →",
                 key=f"scene_{scene['name']}",
                 use_container_width=True,
             ):
