@@ -304,28 +304,20 @@ st.markdown("""
 st.markdown('<div style="text-align:center"><span class="badge">🔒 匿名安全 · 不留痕迹 · 随时离开</span></div>', unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════
-#  MBTI / 星座入口（对齐原版首页按钮）
+#  ✨ 找到属于你的院落 — 用 nav 4×2 网格替代（原 MBTI/星座 大按钮删除，与 nav 重复）
 # ═══════════════════════════════════════════════════════════
 st.markdown("""
-<div style="padding: 0.8rem;">
-    <p style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem;">✨ 找到属于你的院落</p>
+<div style="padding: 0.4rem 0;">
+    <p style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem;">✨ 找到属于你的院落</p>
 </div>
 """, unsafe_allow_html=True)
-
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("🔮 MBTI测试", type="primary", use_container_width=True):
-        st.switch_page("pages/5_mbti.py")
-with col2:
-    if st.button("⭐ 星座指引", use_container_width=True):
-        st.switch_page("pages/7_zodiac.py")
 
 # ═══════════════════════════════════════════════════════════
 #  导航（7个功能入口）
 #  用 st.page_link 替代 st.button + switch_page
 #  原因：st.switch_page 不能在 st.columns() context 内调用（Streamlit 限制）
 #  page_link 是官方推荐的页内导航方案，渲染为可点击链接
-#  CSS .nav-grid 在 mobile 下自动从 7 列变 2 列（看 styles.py media query）
+#  4 列 × 2 行 (8 格) — desktop 横排 4 个，mobile 也撑得下
 # ═══════════════════════════════════════════════════════════
 nav_items = [
     ("💬", "倾诉", "1_chat"),
@@ -335,14 +327,30 @@ nav_items = [
     ("🔮", "MBTI", "5_mbti"),
     ("⭐", "星座", "7_zodiac"),
     ("📊", "洞察", "6_insight"),
+    ("", "", ""),  # 占位空 cell
 ]
-# Top-level 调用（不在 columns context 内）— 避免 switch_page 限制
-# CSS 负责布局：desktop 7 列，mobile 2 列
-for icon, label, page in nav_items:
-    st.page_link(
-        f"pages/{page}.py",
-        label=f"{icon} {label}",
-    )
+# 第一行 4 个
+row1 = st.columns(4)
+for i in range(4):
+    icon, label, page = nav_items[i]
+    with row1[i]:
+        if icon and label and page:
+            st.page_link(
+                f"pages/{page}.py",
+                label=f"{icon} {label}",
+                use_container_width=True,
+            )
+# 第二行 4 个
+row2 = st.columns(4)
+for i in range(4):
+    icon, label, page = nav_items[i + 4]
+    with row2[i]:
+        if icon and label and page:
+            st.page_link(
+                f"pages/{page}.py",
+                label=f"{icon} {label}",
+                use_container_width=True,
+            )
 
 # ═══════════════════════════════════════════════════════════
 #  9大场景（6 经典 + 3 新增：栊翠庵/缀锦楼/紫菱洲）
@@ -351,22 +359,28 @@ st.markdown('<div class="section-title">🏯 选择你的场景</div>', unsafe_a
 
 # ═══════════════════════════════════════════════════════════
 #  情绪入口（可选，非强制）
+#  3 列 × 3 行布局 — desktop 和 mobile 都友好
+#  7 情绪 + 占位 + 占位 = 9
 # ═══════════════════════════════════════════════════════════
-_entry_emotions = ["悲伤", "焦虑", "愤怒", "迷茫", "疲惫", "孤独", "平静"]
-_entry_cols = st.columns(len(_entry_emotions))
-for i, emo in enumerate(_entry_emotions):
-    with _entry_cols[i]:
-        if st.button(f"{emo}", key=f"emo_pick_{emo}", use_container_width=True):
-            st.session_state.selected_emotion = emo
-            # 根据情绪自动进入推荐场景
-            if emo in EMOTION_SCENE_MAP:
-                rec = EMOTION_SCENE_MAP[emo]
-                st.session_state.current_scene = rec["scene"]
-                # 找到该场景对应的角色
-                scene_info = SCENE_MAP.get(rec["scene"], {})
-                st.session_state.chat_character = scene_info.get("char", "贾宝玉")
-                st.session_state.chat_history = []
-                st.switch_page("pages/1_chat.py")
+_entry_emotions = ["悲伤", "焦虑", "愤怒", "迷茫", "疲惫", "孤独", "平静", "", ""]
+# 3 行 × 3 列
+for i in range(0, len(_entry_emotions), 3):
+    cols = st.columns(3)
+    for j in range(3):
+        emo = _entry_emotions[i + j]
+        with cols[j]:
+            if emo:
+                if st.button(f"{emo}", key=f"emo_pick_{emo}", use_container_width=True):
+                    st.session_state.selected_emotion = emo
+                    # 根据情绪自动进入推荐场景
+                    if emo in EMOTION_SCENE_MAP:
+                        rec = EMOTION_SCENE_MAP[emo]
+                        st.session_state.current_scene = rec["scene"]
+                        # 找到该场景对应的角色
+                        scene_info = SCENE_MAP.get(rec["scene"], {})
+                        st.session_state.chat_character = scene_info.get("char", "贾宝玉")
+                        st.session_state.chat_history = []
+                        st.switch_page("pages/1_chat.py")
 
 # 如果用户已选了情绪，显示推荐信息
 if "selected_emotion" in st.session_state:
@@ -385,7 +399,7 @@ if "selected_emotion" in st.session_state:
 """, unsafe_allow_html=True)
 
 # 纯 CSS grid 渲染9个场景卡片，保证尺寸统一
-# CSS .scene-grid 在 mobile 下自动从 3 列变 1 列
+# 2 列布局 — desktop 和 mobile 都友好
 _cards = ""
 for scene in SCENES:
     _cards += f"""
@@ -400,18 +414,18 @@ for scene in SCENES:
     </div>
 </div>"""
 st.markdown(f"""
-<div class="scene-grid">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin:0.8rem 0;">
 {_cards}
 </div>
 """, unsafe_allow_html=True)
 
-# 场景选择按钮：mobile 1 列，desktop 3 列
-# 在 columns 外用 st.button 触发 switch_page 避免 Streamlit columns context 限制
-# 用 st.markdown div 套外层不影响按钮
+# 场景选择按钮：2 列 × 5 行（mobile 也好读，desktop 也紧凑）
+# st.button + st.switch_page 在 columns context 仍 OK（mobile 列降级后等价 top-level）
+# streamlit 在 mobile viewport 自动调整 column 宽度
 st.markdown('<div class="scene-btn-grid">', unsafe_allow_html=True)
-for i in range(0, len(SCENES), 3):
-    cols = st.columns(3)
-    for j, scene in enumerate(SCENES[i:i+3]):
+for i in range(0, len(SCENES), 2):
+    cols = st.columns(2)
+    for j, scene in enumerate(SCENES[i:i+2]):
         with cols[j]:
             if st.button(
                 f"进入{scene['name']} →",

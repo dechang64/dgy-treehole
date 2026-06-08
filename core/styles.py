@@ -410,57 +410,15 @@ CSS = """<style>
 .falling-leaf:nth-child(3) { animation-delay: 3s; }
 
 /* ── 移动端适配 (max-width: 768px) ── */
-/* 顶部 7 列导航变 2 列紧凑网格 */
 @media (max-width: 768px) {
-    /* 7 个 page_link 在 mobile 下排成 2 列 4 行 */
-    [data-testid="stPageLink-NavLink"] {
-        display: inline-block !important;
-        width: 48% !important;
-        margin: 0.15rem 1% !important;
-        text-align: center;
-        font-size: 0.85rem !important;
-        padding: 0.5rem 0.3rem !important;
-    }
-
-    /* 场景卡片 3 列 → 1 列 */
-    .scene-grid {
-        grid-template-columns: 1fr !important;
-    }
-
-    /* 场景按钮 3 列 → 1 列 */
-    .scene-btn-grid [data-testid="column"] {
-        width: 100% !important;
-        flex: 0 0 100% !important;
-    }
-
-    /* 情绪入口 7 列 → 2 列 */
-    [data-testid="stHorizontalBlock"]:has(> [data-testid="column"]:nth-child(7)) {
-        flex-wrap: wrap !important;
-    }
-    [data-testid="stHorizontalBlock"]:has(> [data-testid="column"]:nth-child(7)) > [data-testid="column"] {
-        width: 30% !important;
-        flex: 0 0 30% !important;
-    }
-
-    /* 整体容器：手机窄一点 */
+    /* 整体容器窄一点 */
     .block-container {
         padding-left: 0.5rem !important;
         padding-right: 0.5rem !important;
     }
-}
-
-/* ── 桌面端 (>= 769px) ── */
-@media (min-width: 769px) {
-    .scene-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 0.6rem;
-        margin: 0.8rem 0;
-    }
-
-    [data-testid="stPageLink-NavLink"] {
-        display: inline-block;
-        margin: 0 0.1rem;
+    /* 场景卡片和按钮更紧凑 */
+    .scene-card {
+        padding: 1rem !important;
     }
 }
 
