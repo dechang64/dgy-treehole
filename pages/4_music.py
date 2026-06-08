@@ -111,7 +111,7 @@ def get_smart_recommendation():
                 reason_parts.append(f"你感到「{top_emotion}」，音乐帮你找到力量")
             else:
                 reason_parts.append(f"你感到「{top_emotion}」，{emotion_music}的音乐更适合你")
-        del emotion_profile[top_emotion] if top_emotion in emotion_profile else None
+        emotion_profile.pop(top_emotion, None)
     else:
         reason_parts.append("今天适合用音乐陪伴自己")
 
