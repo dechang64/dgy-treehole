@@ -11,6 +11,8 @@ env/
 # 临时文件
 *.tmp
 *.bak
+*.log
+_*.log
 
 # 本地大文件（已上传到 GitHub Release）
 static/ambient/*.mp3
