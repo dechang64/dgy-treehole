@@ -69,15 +69,15 @@ CSS = """<style>
     margin: 0.15rem;
 }
 
-/* 模式指示器 */
-.mock-badge {
+/* 模式指示器（已停用 — 演示模式不再展示给用户） */
+/* .mock-badge {
     display: inline-block;
     padding: 0.15rem 0.5rem;
     background: rgba(192,57,43,0.1);
     color: #c0392b;
     border-radius: 99px;
     font-size: 0.7rem;
-}
+} */
 
 /* Hero 头部 */
 .hero {

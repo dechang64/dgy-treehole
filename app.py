@@ -6,7 +6,7 @@ Streamlit + MiniMax API + 联邦学习
 
 # 2026-06-08: trigger streamlit cloud rebuild to pick up latest config.py
 import streamlit as st
-from core.config import SCENES, MOCK_MODE, EMOTION_SCENE_MAP, SCENE_MAP
+from core.config import SCENES, EMOTION_SCENE_MAP, SCENE_MAP
 from core.db import init_db
 
 # ── 初始化数据库（建表，幂等）──
@@ -401,5 +401,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-if MOCK_MODE:
-    st.markdown('<div style="text-align:center"><span class="mock-badge">🎭 演示模式（未配置 GLM_API_KEY）</span></div>', unsafe_allow_html=True)
+# ── MOCK_MODE 下不再显示"演示模式"红 badge
+# 内部仍走固定回复作为 safety net（见 core/minimax_chat.py）
+# 用户感知不到差别，UX 更干净
+# if MOCK_MODE:
+#     st.markdown('<div style="text-align:center"><span class="mock-badge">🎭 演示模式（未配置 GLM_API_KEY）</span></div>', unsafe_allow_html=True)

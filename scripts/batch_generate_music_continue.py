@@ -1,6 +1,7 @@
 """继续批量生成疗愈音乐 - 断点续传
 
 跳过已生成的文件，继续生成剩余的音乐
+需要环境变量 MINIMAX_API_KEY — 切勿硬编码到代码里。
 """
 
 import requests
@@ -8,8 +9,9 @@ import os
 import time
 from pathlib import Path
 
-# API 配置
-API_KEY = "sk-cp-Zd7OGQqs6drDh44SJIZI5E7PWFQT50M4sou75hhBV5IZtRlwRzqLRwKxUykt4xE9jPuUtjKo6nnlZrTUArv8UwQ29v7PTrLligNjc_H-yyVcjCo3LwFmWxA"
+API_KEY = os.environ.get("MINIMAX_API_KEY", "")
+if not API_KEY:
+    raise SystemExit("需要 MINIMAX_API_KEY 环境变量")
 BASE_URL = "https://api.minimaxi.com"
 
 # 场景和情绪
