@@ -8,7 +8,7 @@ import streamlit as st
 from core.mbti_data import (
     MBTI_QUESTIONS, MBTI_MAP, DIM_LABELS, DIM_DESCS, calc_mbti,
 )
-from core.config import SCENE_MAP
+from core.config import SCENE_MAP, MBTI_PARAMS
 
 st.set_page_config(page_title="心灵指引 · 大观园树洞", page_icon="🔮", layout="centered")
 from core.styles import inject_css; inject_css()
@@ -143,6 +143,10 @@ else:
         st.session_state.current_scene = info["scene"]
         st.session_state.chat_character = info["char"]
         st.session_state.chat_history = []
+        # 存储 MBTI 人格参数，供后续页面使用
+        st.session_state.personality_type = mbti
+        st.session_state.personality_source = "mbti"
+        st.session_state.personality_params = MBTI_PARAMS.get(mbti, MBTI_PARAMS["INFP"])
         st.switch_page("pages/1_chat.py")
 
     col1, col2 = st.columns(2)

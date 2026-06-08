@@ -9,7 +9,7 @@ from core.zodiac_data import (
     ZODIAC, ELEMENTS, ELEM_CHARS, PLANET_DESC, CITIES,
     calc_birth_chart,
 )
-from core.config import SCENE_MAP
+from core.config import SCENE_MAP, ELEM_PARAMS
 
 st.set_page_config(page_title="星座星盘 · 大观园树洞", page_icon="⭐", layout="centered")
 from core.styles import inject_css; inject_css()
@@ -130,6 +130,10 @@ with tab_zodiac:
             st.session_state.current_scene = z["scene"]
             st.session_state.chat_character = z["char"]
             st.session_state.chat_history = []
+            # 存储星座人格参数
+            st.session_state.personality_type = z["sign"]
+            st.session_state.personality_source = "zodiac"
+            st.session_state.personality_params = ELEM_PARAMS.get(z["elem"], ELEM_PARAMS["水"])
             st.switch_page("pages/1_chat.py")
 
         col1, col2 = st.columns(2)
@@ -277,6 +281,10 @@ with tab_chart:
                     st.session_state.current_scene = scenes[0]
                     st.session_state.chat_character = chars[0]
                     st.session_state.chat_history = []
+                    # 星盘以主导元素存储人格参数
+                    st.session_state.personality_type = f"{dominant_elem}象主导"
+                    st.session_state.personality_source = "zodiac_chart"
+                    st.session_state.personality_params = ELEM_PARAMS.get(dominant_elem, ELEM_PARAMS["水"])
                     st.switch_page("pages/1_chat.py")
 
         col1, col2 = st.columns(2)

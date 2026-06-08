@@ -67,3 +67,85 @@ EMOTIONS = ["悲伤", "焦虑", "愤怒", "迷茫", "疲惫", "孤独", "平静"
 # ── 音乐场景 ──
 MUSIC_PLACES = ["潇湘馆", "蘅芜苑", "怡红院", "稻香村", "藕香榭", "秋爽斋"]
 MUSIC_MOODS = ["宁静", "释然", "思念", "疗愈", "欢愉", "沉思"]
+
+# ═══════════════════════════════════════════════════════════
+#  MBTI → 疗愈偏好参数（贯穿整个旅程）
+# ═══════════════════════════════════════════════════════════
+MBTI_PARAMS = {
+    # I — 内向 / 深度，N — 直觉 / 意义
+    "INFP": {"tone": "gentle_listening", "reply_length": "medium_long",
+             "music_mood": "reflective", "approach": "narrative"},
+    "INFJ": {"tone": "guiding", "reply_length": "medium",
+             "music_mood": "serene", "approach": "cbt"},
+    # E — 外向 / 能量
+    "ENFP": {"tone": "light", "reply_length": "medium",
+             "music_mood": "uplifting", "approach": "positive"},
+    "ENFJ": {"tone": "warm", "reply_length": "medium",
+             "music_mood": "warm", "approach": "humanistic"},
+    # 理性分析型
+    "INTJ": {"tone": "guiding", "reply_length": "medium",
+             "music_mood": "meditative", "approach": "cbt"},
+    "INTP": {"tone": "guiding", "reply_length": "medium_long",
+             "music_mood": "meditative", "approach": "cbt"},
+    "ENTJ": {"tone": "guiding", "reply_length": "short",
+             "music_mood": "uplifting", "approach": "empowering"},
+    "ENTP": {"tone": "light", "reply_length": "short",
+             "music_mood": "uplifting", "approach": "positive"},
+    # 实际感受型
+    "ISFP": {"tone": "gentle_listening", "reply_length": "medium_long",
+             "music_mood": "reflective", "approach": "narrative"},
+    "ISFJ": {"tone": "warm", "reply_length": "medium_long",
+             "music_mood": "warm", "approach": "mindfulness"},
+    "ESFP": {"tone": "light", "reply_length": "short",
+             "music_mood": "uplifting", "approach": "positive"},
+    "ESFJ": {"tone": "warm", "reply_length": "medium",
+             "music_mood": "warm", "approach": "humanistic"},
+    "ISTP": {"tone": "guiding", "reply_length": "short",
+             "music_mood": "serene", "approach": "empowering"},
+    "ISTJ": {"tone": "guiding", "reply_length": "medium",
+             "music_mood": "serene", "approach": "cbt"},
+    "ESTP": {"tone": "light", "reply_length": "short",
+             "music_mood": "uplifting", "approach": "positive"},
+    "ESTJ": {"tone": "guiding", "reply_length": "short",
+             "music_mood": "serene", "approach": "empowering"},
+}
+
+# ═══════════════════════════════════════════════════════════
+#  星座元素 → 疗愈偏好参数
+# ═══════════════════════════════════════════════════════════
+ELEM_PARAMS = {
+    "火": {"tone": "light", "reply_length": "short",
+           "music_mood": "uplifting", "approach": "positive"},
+    "土": {"tone": "warm", "reply_length": "medium_long",
+           "music_mood": "warm", "approach": "mindfulness"},
+    "风": {"tone": "light", "reply_length": "short",
+           "music_mood": "uplifting", "approach": "positive"},
+    "水": {"tone": "gentle_listening", "reply_length": "medium_long",
+           "music_mood": "reflective", "approach": "narrative"},
+}
+
+# ═══════════════════════════════════════════════════════════
+#  情绪 → 音乐情绪推荐（主情绪优先，次情绪辅助）
+# ═══════════════════════════════════════════════════════════
+EMOTION_MUSIC_MAP = {
+    "悲伤":   {"primary": "疗愈", "secondary": "沉思"},
+    "焦虑":   {"primary": "宁静", "secondary": "沉思"},
+    "愤怒":   {"primary": "释然", "secondary": "欢愉"},
+    "迷茫":   {"primary": "沉思", "secondary": "宁静"},
+    "疲惫":   {"primary": "疗愈", "secondary": "宁静"},
+    "孤独":   {"primary": "疗愈", "secondary": "宁静"},
+    "平静":   {"primary": "宁静", "secondary": "沉思"},
+    "感恩":   {"primary": "欢愉", "secondary": "疗愈"},
+    "期待":   {"primary": "欢愉", "secondary": "释然"},
+}
+
+# ═══════════════════════════════════════════════════════════
+#  疗愈偏好 → 音乐氛围推荐（personality params 的 music_mood）
+# ═══════════════════════════════════════════════════════════
+MUSIC_MOOD_MUSIC_MAP = {
+    "serene":     "宁静",
+    "warm":       "疗愈",
+    "meditative": "沉思",
+    "uplifting":  "欢愉",
+    "reflective": "思念",
+}

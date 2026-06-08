@@ -2,12 +2,20 @@
 
 音乐文件通过 GitHub Release 直接托管（Range 请求友好），
 由 Streamlit Cloud 代为请求后以本地临时文件方式播放。
+
+智能推荐逻辑：
+- 优先读取 session_state.personality_params（MBTI/星座结果）
+- 结合 session_state.emotion_profile（当前对话情绪）
+- 为用户推荐最契合当前状态的曲目
 """
 import streamlit as st
 import requests
 import tempfile
-import os
-from core.config import MUSIC_PLACES, MUSIC_MOODS
+from core.config import (
+    MUSIC_PLACES, MUSIC_MOODS, MBTI_PARAMS, ELEM_PARAMS,
+    EMOTION_MUSIC_MAP, MUSIC_MOOD_MUSIC_MAP,
+)
+from core.emotion_detector import compute_session_emotion_profile
 
 st.set_page_config(page_title="疗愈音乐 · 大观园树洞", page_icon="🎵", layout="centered")
 from core.styles import inject_css; inject_css()
@@ -55,18 +63,86 @@ FILENAME_MAP = {
 }
 
 
+# ═══════════════════════════════════════════════════════════
+#  智能推荐引擎
+# ═══════════════════════════════════════════════════════════
+
+def get_smart_recommendation():
+    """
+    综合 personality_params + emotion_profile 生成个性化推荐。
+
+    Returns:
+        (scene, mood, reason): 推荐场景、情绪、推荐理由
+    """
+    params = st.session_state.get("personality_params", {})
+    personality_source = st.session_state.get("personality_source", "")
+    current_scene = st.session_state.get("current_scene", "")
+    chat_history = st.session_state.get("chat_history", [])
+
+    reason_parts = []
+
+    # 1. 人格偏好 → music_mood
+    personality_mood = params.get("music_mood", "")
+    if personality_mood and personality_mood in MUSIC_MOOD_MUSIC_MAP:
+        music_mood = MUSIC_MOOD_MUSIC_MAP[personality_mood]
+        if personality_source == "mbti":
+            mbti_type = st.session_state.get("personality_type", "")
+            reason_parts.append(f"你的{mbti_type}人格偏好「{personality_mood}」风格的音乐")
+        elif personality_source in ("zodiac", "zodiac_chart"):
+            reason_parts.append(f"你的性格特质更适合「{personality_mood}」氛围")
+    else:
+        music_mood = "宁静"  # 默认
+
+    # 2. 情绪画像 → 调整音乐情绪
+    emotion_profile = compute_session_emotion_profile(chat_history) if chat_history else {}
+    if emotion_profile:
+        top_emotion = max(emotion_profile, key=emotion_profile.get)
+        if top_emotion in EMOTION_MUSIC_MAP:
+            # 情绪对音乐的影响：人格偏好为主，情绪为辅
+            emotion_music = EMOTION_MUSIC_MAP[top_emotion]["primary"]
+            if music_mood == "宁静":
+                # 焦虑时宁静优先，不覆盖
+                reason_parts.append(f"你当前感到「{top_emotion}」，适合平静的音乐来舒缓")
+            elif music_mood in ("uplifting", "reflective") and top_emotion in ("悲伤", "孤独"):
+                # 悲伤/孤独 时需要温暖
+                music_mood = "疗愈"
+                reason_parts.append(f"你感到「{top_emotion}」，这首曲子能温柔地陪伴你")
+            elif music_mood == "uplifting" and top_emotion in ("愤怒", "迷茫"):
+                reason_parts.append(f"你感到「{top_emotion}」，音乐帮你找到力量")
+            else:
+                reason_parts.append(f"你感到「{top_emotion}」，{emotion_music}的音乐更适合你")
+        del emotion_profile[top_emotion] if top_emotion in emotion_profile else None
+    else:
+        reason_parts.append("今天适合用音乐陪伴自己")
+
+    # 3. 场景匹配
+    if current_scene and current_scene in MUSIC_PLACES:
+        scene = current_scene
+    elif personality_mood == "reflective":
+        scene = "潇湘馆"
+    elif personality_mood == "meditative":
+        scene = "稻香村"
+    elif personality_mood == "warm":
+        scene = "怡红院"
+    else:
+        scene = MUSIC_PLACES[0]
+
+    reason = " · ".join(reason_parts) if reason_parts else "为你量身推荐"
+    return scene, music_mood, reason
+
+
+# ═══════════════════════════════════════════════════════════
+#  音频下载（复用之前逻辑）
+# ═══════════════════════════════════════════════════════════
+
 @st.cache_data(ttl=3600, show_spinner="正在加载音乐...")
 def get_audio_file(place: str, mood: str) -> str | None:
-    """下载音频到临时文件并返回路径，缓存1小时"""
     chinese_name = f"{place}_{mood}.mp3"
     asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
     url = f"{RELEASE_BASE}/{asset_name}"
-
     try:
-        with st.spinner("加载音乐中..."):
-            resp = requests.get(url, timeout=60, stream=True)
-            resp.raise_for_status()
-
+        resp = requests.get(url, timeout=60, stream=True)
+        resp.raise_for_status()
         tmp = tempfile.NamedTemporaryFile(
             suffix=".mp3", prefix=f"treehole_{place}_{mood}_", delete=False
         )
@@ -79,7 +155,10 @@ def get_audio_file(place: str, mood: str) -> str | None:
         return None
 
 
-# ── 返回 ──
+# ═══════════════════════════════════════════════════════════
+#  页面渲染
+# ═══════════════════════════════════════════════════════════
+
 if st.button("← 回到大观园", use_container_width=True):
     st.switch_page("app.py")
 
@@ -91,12 +170,66 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── 选择参数 ──
+# ── 智能推荐入口 ──
+has_personality = "personality_params" in st.session_state
+has_chat = bool(st.session_state.get("chat_history", []))
+has_context = has_personality or has_chat
+
+if has_context:
+    rec_scene, rec_mood, rec_reason = get_smart_recommendation()
+    rec_place_idx = MUSIC_PLACES.index(rec_scene) if rec_scene in MUSIC_PLACES else 0
+    rec_mood_idx = MUSIC_MOODS.index(rec_mood) if rec_mood in MUSIC_MOODS else 0
+
+    st.markdown(f"""
+<div class="card" style="border-left: 3px solid #2d6a4f;">
+    <div style="display:flex;align-items:center;gap:0.6rem;">
+        <div style="font-size:1.5rem;">✨</div>
+        <div>
+            <div style="font-size:0.85rem;font-weight:600;color:#2d6a4f;">今日推荐</div>
+            <div style="font-size:0.78rem;color:#8b7355;">{rec_reason}</div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    # 直接播放推荐音乐
+    rec_path = get_audio_file(rec_scene, rec_mood)
+    if rec_path:
+        st.markdown(f"""
+<div class="card" style="text-align:center;">
+    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎶</div>
+    <h3>{rec_scene} · {rec_mood}</h3>
+    <p style="font-size: 0.8rem; color: #8b7355;">AI 专属生成</p>
+</div>
+""", unsafe_allow_html=True)
+        st.audio(rec_path, format="audio/mp3")
+        with open(rec_path, "rb") as f:
+            st.download_button(
+                label="📥 下载推荐音乐",
+                data=f,
+                file_name=f"{rec_scene}_{rec_mood}.mp3",
+                mime="audio/mpeg",
+                use_container_width=True,
+            )
+
+    st.markdown("""
+<div style="text-align:center; margin: 0.8rem 0;">
+    <span style="font-size: 0.85rem; color: #8b7355;">— 或者，自选音乐 —</span>
+</div>
+""", unsafe_allow_html=True)
+
+# ── 自选参数 ──
 col1, col2 = st.columns(2)
 with col1:
-    place = st.selectbox("场景", MUSIC_PLACES, index=0)
+    place = st.selectbox(
+        "场景", MUSIC_PLACES,
+        index=rec_place_idx if has_context else 0,
+    )
 with col2:
-    mood = st.selectbox("情绪", MUSIC_MOODS, index=0)
+    mood = st.selectbox(
+        "情绪", MUSIC_MOODS,
+        index=rec_mood_idx if has_context else 0,
+    )
 
 # ── 播放 ──
 audio_path = get_audio_file(place, mood)
@@ -112,7 +245,6 @@ st.markdown(f"""
 
 if audio_path:
     st.audio(audio_path, format="audio/mp3")
-    # 下载按钮
     with open(audio_path, "rb") as f:
         st.download_button(
             label="📥 下载音乐",

@@ -48,10 +48,19 @@ scene_name = st.session_state.get("current_scene", "怡红院")
 char_info = get_character(character)
 
 # ── 场景标题 ──
+personality_type = st.session_state.get("personality_type", "")
+personality_source = st.session_state.get("personality_source", "")
+if personality_type and personality_source == "mbti":
+    personality_tag = f'<span class="tag" style="margin-left:0.5rem;">{personality_type}</span>'
+elif personality_type:
+    personality_tag = f'<span class="tag" style="margin-left:0.5rem;">{personality_type}</span>'
+else:
+    personality_tag = ""
+
 st.markdown(f"""
 <div class="card-dark" style="text-align:center; padding: 1rem;">
     <div style="font-size: 2rem;">{char_info['icon']}</div>
-    <div style="font-weight: 600; font-size: 1.1rem;">{char_info['scene']} · {character}</div>
+    <div style="font-weight: 600; font-size: 1.1rem;">{char_info['scene']} · {character}{personality_tag}</div>
     <div style="font-size: 0.8rem; color: #d4c5a9; margin-top: 0.2rem;">{char_info['theory']}</div>
 </div>
 """, unsafe_allow_html=True)
@@ -110,7 +119,7 @@ if user_input:
     st.rerun()
 
 # ── 底部操作 ──
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 with col1:
     if st.button("🔄 换个场景", use_container_width=True):
         st.session_state.chat_history = []
@@ -118,9 +127,28 @@ with col1:
 with col2:
     if st.button("🌳 去树洞", use_container_width=True):
         st.switch_page("pages/2_treehole.py")
-with col3:
-    if st.button("📊 情绪洞察", use_container_width=True):
-        st.switch_page("pages/6_insight.py")
+
+# 音乐推荐入口（基于当前人格+情绪自动推荐）
+params = st.session_state.get("personality_params", {})
+chat_history = st.session_state.get("chat_history", [])
+music_mood = params.get("music_mood", "")
+
+# 根据人格获取推荐音乐
+if music_mood and music_mood in {"serene": "宁静", "warm": "疗愈", "meditative": "沉思", "uplifting": "欢愉", "reflective": "思念"}.values() or music_mood:
+    mood_map = {"serene": "宁静", "warm": "疗愈", "meditative": "沉思", "uplifting": "欢愉", "reflective": "思念"}
+    recommended_mood = mood_map.get(params.get("music_mood", ""), "疗愈")
+    rec_scene = st.session_state.get("current_scene", "潇湘馆")
+    st.markdown(f"""
+<div style="text-align:center; margin-top: 0.5rem;">
+    <a href="#" onclick="window.location.href='/pages/4_music.py'">
+        <button style="background-color: #2d6a4f; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+            🎵 配一首「{recommended_mood}」音乐
+        </button>
+    </a>
+</div>
+""", unsafe_allow_html=True)
+elif st.button("🎵 去听音乐", use_container_width=True):
+    st.switch_page("pages/4_music.py")
 
 # ── 情绪标签显示 ──
 user_msgs = [m for m in st.session_state.chat_history if m.get("role") == "user" and m.get("emotion")]
