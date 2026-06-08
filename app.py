@@ -4,6 +4,7 @@
 Streamlit + MiniMax API + 联邦学习
 """
 
+# 2026-06-08: trigger streamlit cloud rebuild to pick up latest config.py
 import streamlit as st
 from core.config import SCENES, MOCK_MODE, EMOTION_SCENE_MAP, SCENE_MAP
 from core.db import init_db
