@@ -8,17 +8,21 @@ Streamlit + MiniMax API + 联邦学习
 import streamlit as st
 from core.config import SCENES, EMOTION_SCENE_MAP, SCENE_MAP
 from core.db import init_db
+from core.styles import inject_css  # 注入移动端 + 树洞/hero 样式
 
 # ── 初始化数据库（建表，幂等）──
 init_db()
 
-# ── 页面配置 ──
+# ── 页面配置（必须是第一个 st 命令）──
 st.set_page_config(
     page_title="大观园树洞",
     page_icon="🌸",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
+
+# ── 注入全局 CSS（在 set_page_config 之后）──
+inject_css()
 
 # ── 自定义 CSS（与原版 index.html 完全对齐）──
 st.markdown("""<style>
