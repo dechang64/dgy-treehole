@@ -302,25 +302,27 @@ with col2:
 
 # ═══════════════════════════════════════════════════════════
 #  导航（7个功能入口）
+#  用 st.page_link 替代 st.button + switch_page
+#  原因：st.switch_page 不能在 st.columns() context 内调用（Streamlit 限制）
+#  page_link 是官方推荐的页内导航方案，渲染为可点击链接
 # ═══════════════════════════════════════════════════════════
-nav_cols = st.columns(7)
 nav_items = [
-    ("💬", "倾诉"),
-    ("🌳", "树洞"),
-    ("🌸", "共鸣"),
-    ("🎵", "音乐"),
-    ("🔮", "MBTI"),
-    ("⭐", "星座"),
-    ("📊", "洞察"),
+    ("💬", "倾诉", "1_chat"),
+    ("🌳", "树洞", "2_treehole"),
+    ("🌸", "共鸣", "3_resonance"),
+    ("🎵", "音乐", "4_music"),
+    ("🔮", "MBTI", "5_mbti"),
+    ("⭐", "星座", "7_zodiac"),
+    ("📊", "洞察", "6_insight"),
 ]
-nav_pages = [
-    "1_chat", "2_treehole", "3_resonance",
-    "4_music", "5_mbti", "7_zodiac", "6_insight",
-]
-for i, (icon, label) in enumerate(nav_items):
+nav_cols = st.columns(7)
+for i, (icon, label, page) in enumerate(nav_items):
     with nav_cols[i]:
-        if st.button(f"{icon}\n{label}", key=f"nav_{i}", use_container_width=True):
-            st.switch_page(f"pages/{nav_pages[i]}.py")
+        st.page_link(
+            f"pages/{page}.py",
+            label=f"{icon}\n{label}",
+            use_container_width=True,
+        )
 
 # ═══════════════════════════════════════════════════════════
 #  9大场景（6 经典 + 3 新增：栊翠庵/缀锦楼/紫菱洲）

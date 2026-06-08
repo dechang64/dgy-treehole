@@ -313,6 +313,101 @@ CSS = """<style>
     50%       { transform: translateY(-12px); }
 }
 .float { animation: floatUp 3s ease-in-out infinite; }
+
+/* ── 树洞 Hero：古树内腔，从洞里看出去 ── */
+.treehole-hero {
+    position: relative;
+    background:
+        /* 顶部一道冷月白光（穿过树缝） */
+        radial-gradient(
+            ellipse 80% 30% at 50% 0%,
+            rgba(255,245,220,0.18) 0%,
+            rgba(255,245,220,0.05) 40%,
+            transparent 70%
+        ),
+        /* 底部苔痕幽绿 */
+        radial-gradient(
+            ellipse 100% 50% at 50% 100%,
+            rgba(45,106,79,0.25) 0%,
+            transparent 60%
+        ),
+        /* 主体：深棕木心 */
+        linear-gradient(180deg, #2c1810 0%, #1a0e08 50%, #0f0805 100%);
+    color: #f5f0e8;
+    padding: 2.5rem 1.5rem 2rem;
+    text-align: center;
+    border-radius: 0 0 24px 24px;
+    margin-bottom: 1.2rem;
+    overflow: hidden;
+    box-shadow: inset 0 0 80px rgba(0,0,0,0.6);
+}
+/* 树洞内壁竖纹：模拟年轮+木纹 */
+.treehole-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(
+            85deg,
+            transparent 0px,
+            transparent 14px,
+            rgba(245,240,232,0.04) 14px,
+            rgba(245,240,232,0.04) 16px
+        ),
+        radial-gradient(
+            ellipse at 50% 50%,
+            transparent 30%,
+            rgba(0,0,0,0.4) 100%
+        );
+    pointer-events: none;
+    z-index: 0;
+}
+.treehole-hero > * { position: relative; z-index: 1; }
+
+.treehole-hero .moon {
+    font-size: 2.8rem;
+    filter: drop-shadow(0 0 18px rgba(255,235,180,0.6));
+    display: block;
+    margin-bottom: 0.4rem;
+    animation: gentleFloat 4s ease-in-out infinite;
+}
+
+.treehole-hero h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.4rem;
+    margin: 0.3rem 0 0.5rem;
+    color: #f5f0e8;
+}
+
+.treehole-hero .sub {
+    font-size: 0.88rem;
+    color: #d4c5a9;
+    letter-spacing: 0.1rem;
+    margin: 0;
+}
+
+.treehole-hero .quote {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    color: #8b7355;
+    font-style: italic;
+    letter-spacing: 0.05rem;
+    opacity: 0.85;
+}
+
+/* 落叶飘入动画 */
+@keyframes fallIn {
+    0%   { transform: translateY(-30px) rotate(0deg); opacity: 0; }
+    20%  { opacity: 1; }
+    100% { transform: translateY(40px) rotate(180deg); opacity: 0; }
+}
+.falling-leaf {
+    display: inline-block;
+    animation: fallIn 5s ease-in-out infinite;
+}
+.falling-leaf:nth-child(2) { animation-delay: 1.5s; }
+.falling-leaf:nth-child(3) { animation-delay: 3s; }
 </style>"""
 
 import streamlit as st

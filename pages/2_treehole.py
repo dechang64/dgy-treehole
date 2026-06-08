@@ -217,13 +217,24 @@ if "session_id" not in st.session_state:
 if st.button("← 回到大观园", use_container_width=True):
     st.switch_page("app.py")
 
+# ── 树洞 Hero：古槐内腔，月光从树缝漏下 ──
 st.markdown("""
-<div class="card-dark" style="text-align:center; padding: 1.5rem;">
-    <div style="font-size: 2.5rem;">🌳</div>
-    <h2 style="margin: 0.5rem 0;">匿名树洞</h2>
-    <p style="font-size: 0.85rem; color: #d4c5a9;">说出你的心事，然后让它随风而去</p>
-    <p style="font-size: 0.75rem; color: #8b7355; margin-top: 0.3rem;">🔒 你的话不会被存储，释放即消失</p>
-    <p style="font-size: 0.7rem; color: #b8860b; margin-top: 0.2rem;">💡 想让别人看到？去「匿名共鸣」发布，那里是匿名的</p>
+<div class="treehole-hero">
+    <div class="moon">🌕</div>
+    <h2>古 · 树 · 洞</h2>
+    <p class="sub">把心事说给这棵千年老槐，让它替你记得</p>
+    <div class="quote">
+        <span class="falling-leaf">🍃</span>
+        <span class="falling-leaf">🍂</span>
+        <span class="falling-leaf">🍃</span>
+        &nbsp;说出即放下，落地即归尘
+    </div>
+    <p style="font-size: 0.72rem; color: #8b7355; margin-top: 1rem;">
+        🔒 你的话不会被存储 · 释放即消失
+    </p>
+    <p style="font-size: 0.68rem; color: #b8860b; margin-top: 0.3rem;">
+        💡 想留下共鸣？去「🌸 匿名共鸣」发布
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
