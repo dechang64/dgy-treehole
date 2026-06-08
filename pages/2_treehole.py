@@ -64,6 +64,25 @@ FILENAME_MAP = {
     "秋爽斋_沉思.mp3": "qiushuangzhai_chensi.mp3",
     "秋爽斋_疗愈.mp3": "qiushuangzhai_liaoyu.mp3",
     "秋爽斋_释然.mp3": "qiushuangzhai_shiran.mp3",
+    # ── 新增三院 ──
+    "栊翠庵_宁静.mp3": "longcuian_ningjing.mp3",
+    "栊翠庵_思念.mp3": "longcuian_sinian.mp3",
+    "栊翠庵_欢愉.mp3": "longcuian_huanyu.mp3",
+    "栊翠庵_沉思.mp3": "longcuian_chensi.mp3",
+    "栊翠庵_疗愈.mp3": "longcuian_liaoyu.mp3",
+    "栊翠庵_释然.mp3": "longcuian_shiran.mp3",
+    "缀锦楼_宁静.mp3": "zhuilou_ningjing.mp3",
+    "缀锦楼_思念.mp3": "zhuilou_sinian.mp3",
+    "缀锦楼_欢愉.mp3": "zhuilou_huanyu.mp3",
+    "缀锦楼_沉思.mp3": "zhuilou_chensi.mp3",
+    "缀锦楼_疗愈.mp3": "zhuilou_liaoyu.mp3",
+    "缀锦楼_释然.mp3": "zhuilou_shiran.mp3",
+    "紫菱洲_宁静.mp3": "zilingzhou_ningjing.mp3",
+    "紫菱洲_思念.mp3": "zilingzhou_sinian.mp3",
+    "紫菱洲_欢愉.mp3": "zilingzhou_huanyu.mp3",
+    "紫菱洲_沉思.mp3": "zilingzhou_chensi.mp3",
+    "紫菱洲_疗愈.mp3": "zilingzhou_liaoyu.mp3",
+    "紫菱洲_释然.mp3": "zilingzhou_shiran.mp3",
 }
 
 
@@ -171,6 +190,7 @@ def get_music_recommendation(emotion: str) -> tuple[str, str]:
         mood = "疗愈"
 
     # 悲伤/孤独 → 怡红院（温暖），焦虑/疲惫 → 稻香村（宁静）
+    # 执念 → 栊翠庵（放下），委屈 → 缀锦楼（边界），自卑 → 紫菱洲（自我悲悯）
     scene_map = {
         "悲伤": "怡红院",
         "孤独": "怡红院",
@@ -181,6 +201,10 @@ def get_music_recommendation(emotion: str) -> tuple[str, str]:
         "平静": "稻香村",
         "感恩": "怡红院",
         "期待": "藕香榭",
+        # ── 新增三院 ──
+        "执念": "栊翠庵",
+        "委屈": "缀锦楼",
+        "自卑": "紫菱洲",
     }
     scene = scene_map.get(emotion, "稻香村")
     return scene, mood

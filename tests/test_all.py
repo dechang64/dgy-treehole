@@ -16,16 +16,18 @@ from core.db import init_db, create_post, get_posts, resonate_post, get_emotion_
 
 def test_config():
     """配置常量完整性"""
-    assert len(SCENES) == 6, f"Expected 6 scenes, got {len(SCENES)}"
+    assert len(SCENES) == 9, f"Expected 9 scenes, got {len(SCENES)}"
     assert len(RELEASE_METHODS) == 5, f"Expected 5 release methods, got {len(RELEASE_METHODS)}"
-    assert len(EMOTIONS) == 9, f"Expected 9 emotions, got {len(EMOTIONS)}"
-    assert all(s["name"] in ["潇湘馆","蘅芜苑","怡红院","稻香村","藕香榭","秋爽斋"] for s in SCENES)
-    print("  ✅ config: 6 scenes, 5 methods, 9 emotions")
+    assert len(EMOTIONS) == 12, f"Expected 12 emotions, got {len(EMOTIONS)}"
+    expected_scenes = ["潇湘馆","蘅芜苑","怡红院","稻香村","藕香榭","秋爽斋",
+                       "栊翠庵","缀锦楼","紫菱洲"]
+    assert all(s["name"] in expected_scenes for s in SCENES)
+    print("  ✅ config: 9 scenes, 5 methods, 12 emotions")
 
 
 def test_characters():
     """角色定义完整性"""
-    assert len(CHARACTERS) == 6, f"Expected 6 characters, got {len(CHARACTERS)}"
+    assert len(CHARACTERS) == 9, f"Expected 9 characters, got {len(CHARACTERS)}"
     for name, char in CHARACTERS.items():
         assert "system_prompt" in char, f"{name} missing system_prompt"
         assert "greeting" in char, f"{name} missing greeting"
@@ -38,9 +40,13 @@ def test_characters():
     assert daiyu["scene"] == "潇湘馆"
     scene_char = get_character_by_scene("怡红院")
     assert scene_char["scene"] == "怡红院"
+    # 新三院查找
+    assert get_character("妙玉")["scene"] == "栊翠庵"
+    assert get_character("惜春")["scene"] == "缀锦楼"
+    assert get_character("迎春")["scene"] == "紫菱洲"
     all_chars = get_all_characters()
-    assert len(all_chars) == 6
-    print("  ✅ characters: 6 characters with complete definitions")
+    assert len(all_chars) == 9
+    print("  ✅ characters: 9 characters with complete definitions")
 
 
 def test_emotion_detector():
@@ -55,6 +61,10 @@ def test_emotion_detector():
     assert detect_emotion("还好吧，没什么特别的") == "平静"
     assert detect_emotion("感谢有你在我身边") == "感恩"
     assert detect_emotion("期待明天的到来") == "期待"
+    # ── 新增三院情绪 ──
+    assert detect_emotion("这件事我一直放不下，总是想起") == "执念"
+    assert detect_emotion("我付出了那么多，却没人看见") == "委屈"
+    assert detect_emotion("我什么都做不好，不如别人") == "自卑"
 
     # 多情绪
     multi = detect_emotions_multi("又难过又焦虑，不知道该怎么办")
@@ -75,7 +85,7 @@ def test_emotion_detector():
     assert len(profile) > 0
     assert sum(profile.values()) > 0
 
-    print("  ✅ emotion_detector: all 9 emotions detected correctly")
+    print("  ✅ emotion_detector: all 12 emotions detected correctly")
 
 
 def test_fl_engine():

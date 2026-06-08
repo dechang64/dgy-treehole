@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# 临时文件
+*.tmp
+*.bak
+
+# 本地大文件（已上传到 GitHub Release）
+static/ambient/*.mp3
+static/music/*.mp3
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 环境变量
+.env
+.env.local

@@ -323,7 +323,7 @@ for i, (icon, label) in enumerate(nav_items):
             st.switch_page(f"pages/{nav_pages[i]}.py")
 
 # ═══════════════════════════════════════════════════════════
-#  6大场景（对齐原版，展示 mood + style）
+#  9大场景（6 经典 + 3 新增：栊翠庵/缀锦楼/紫菱洲）
 # ═══════════════════════════════════════════════════════════
 st.markdown("### 🏯 选择你的场景")
 
@@ -362,7 +362,7 @@ if "selected_emotion" in st.session_state:
 </div>
 """, unsafe_allow_html=True)
 
-# 纯 CSS grid 渲染6个场景卡片，保证尺寸统一
+# 纯 CSS grid 渲染9个场景卡片，保证尺寸统一
 _cards = ""
 for scene in SCENES:
     _cards += f"""
@@ -377,12 +377,12 @@ for scene in SCENES:
     </div>
 </div>"""
 st.markdown(f"""
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin:0.8rem 0;">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;margin:0.8rem 0;">
 {_cards}
 </div>
 """, unsafe_allow_html=True)
 
-# 场景选择按钮（2行×3列，对齐卡片位置）
+# 场景选择按钮（3行×3列，对齐卡片位置）
 for i in range(0, len(SCENES), 3):
     cols = st.columns(3)
     for j, scene in enumerate(SCENES[i:i+3]):

@@ -60,6 +60,25 @@ FILENAME_MAP = {
     "秋爽斋_沉思.mp3": "qiushuangzhai_chensi.mp3",
     "秋爽斋_疗愈.mp3": "qiushuangzhai_liaoyu.mp3",
     "秋爽斋_释然.mp3": "qiushuangzhai_shiran.mp3",
+    # ── 新增三院 ──
+    "栊翠庵_宁静.mp3": "longcuian_ningjing.mp3",
+    "栊翠庵_思念.mp3": "longcuian_sinian.mp3",
+    "栊翠庵_欢愉.mp3": "longcuian_huanyu.mp3",
+    "栊翠庵_沉思.mp3": "longcuian_chensi.mp3",
+    "栊翠庵_疗愈.mp3": "longcuian_liaoyu.mp3",
+    "栊翠庵_释然.mp3": "longcuian_shiran.mp3",
+    "缀锦楼_宁静.mp3": "zhuilou_ningjing.mp3",
+    "缀锦楼_思念.mp3": "zhuilou_sinian.mp3",
+    "缀锦楼_欢愉.mp3": "zhuilou_huanyu.mp3",
+    "缀锦楼_沉思.mp3": "zhuilou_chensi.mp3",
+    "缀锦楼_疗愈.mp3": "zhuilou_liaoyu.mp3",
+    "缀锦楼_释然.mp3": "zhuilou_shiran.mp3",
+    "紫菱洲_宁静.mp3": "zilingzhou_ningjing.mp3",
+    "紫菱洲_思念.mp3": "zilingzhou_sinian.mp3",
+    "紫菱洲_欢愉.mp3": "zilingzhou_huanyu.mp3",
+    "紫菱洲_沉思.mp3": "zilingzhou_chensi.mp3",
+    "紫菱洲_疗愈.mp3": "zilingzhou_liaoyu.mp3",
+    "紫菱洲_释然.mp3": "zilingzhou_shiran.mp3",
 }
 
 
