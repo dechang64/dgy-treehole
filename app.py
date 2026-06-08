@@ -24,6 +24,18 @@ st.set_page_config(
 # ── 注入全局 CSS（在 set_page_config 之后）──
 inject_css()
 
+# ═══════════════════════════════════════════════════════════
+# 🐛 DEBUG MARKER — 如果你看到这行黄色条 = Cloud 在跑新代码
+# 如果没看到 = Cloud 卡了, 请到 Manage app → Reboot
+# ═══════════════════════════════════════════════════════════
+st.markdown("""
+<div style="background: #ffeb3b; color: #000; padding: 12px; text-align: center;
+            font-size: 16px; font-weight: bold; border: 3px solid #f44336;
+            border-radius: 8px; margin: 10px 0;">
+    🐛 DEBUG: BUILD 28b082b+v3 | 如果你看到这条黄条 = Cloud 已部署新代码
+</div>
+""", unsafe_allow_html=True)
+
 # ── 自定义 CSS（与原版 index.html 完全对齐）──
 st.markdown("""<style>
 /* 隐藏 Streamlit 默认元素 */
