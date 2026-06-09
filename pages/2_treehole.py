@@ -24,17 +24,30 @@ import uuid
 import requests
 import tempfile
 import streamlit as st
-from core.config import (
-    RELEASE_METHODS, EMOTION_MUSIC_MAP, MUSIC_PLACES, MUSIC_MOODS,
-    EMOTION_ICONS, EMOTION_PLACEHOLDERS, SCENE_FIT_HINTS, SCENES, SCENE_MAP,
-)
-from core.emotion_detector import detect_emotion, compute_session_emotion_profile
-from core.fl_engine import submit_local_stats
-from core.db import (
-    record_treehole, get_treehole_stats, record_treehole_feedback, create_post,
-)
-from core.minimax_chat import chat
-from core.characters import get_character
+
+# ── DIAG: 包 import 块抓任何错，streamlit 报 ImportError 时把 traceback 显示出来 ──
+try:
+    from core.config import (
+        RELEASE_METHODS, EMOTION_MUSIC_MAP, MUSIC_PLACES, MUSIC_MOODS,
+        EMOTION_ICONS, EMOTION_PLACEHOLDERS, SCENE_FIT_HINTS, SCENES, SCENE_MAP,
+    )
+    from core.emotion_detector import detect_emotion, compute_session_emotion_profile
+    from core.fl_engine import submit_local_stats
+    from core.db import (
+        record_treehole, get_treehole_stats, record_treehole_feedback, create_post,
+    )
+    from core.minimax_chat import chat
+    from core.characters import get_character
+except Exception as _diag_err:
+    import traceback as _diag_tb
+    _tb_text = _diag_tb.format_exc()
+    # 写到 stderr 让 Cloud logs 抓得到
+    import sys as _diag_sys
+    print("=== DIAG: 2_treehole.py import error ===", file=_diag_sys.stderr)
+    print(_tb_text, file=_diag_sys.stderr)
+    # 显示在屏幕
+    st.error("❌ 2_treehole.py 加载失败 (DIAG mode)\n\n```\n" + _tb_text + "\n```")
+    st.stop()
 
 st.set_page_config(page_title="匿名树洞 · 大观园树洞", page_icon="🌳", layout="centered")
 from core.styles import inject_css; inject_css()
