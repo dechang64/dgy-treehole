@@ -409,19 +409,12 @@ CSS = """<style>
 .falling-leaf:nth-child(2) { animation-delay: 1.5s; }
 .falling-leaf:nth-child(3) { animation-delay: 3s; }
 
-/* ── 场景卡片网格 (与按钮视觉融合) ── */
+/* ── 场景卡片网格 (page_link 当卡片用) ── */
 .scene-card-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.6rem;
-    margin: 0.6rem 0 0.4rem;
-}
-.scene-card-cta {
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
-    color: #b8860b;
-    font-weight: 500;
-    text-align: right;
+    margin: 0.6rem 0;
 }
 @media (max-width: 768px) {
     .scene-card-grid {
@@ -429,15 +422,31 @@ CSS = """<style>
     }
 }
 
-/* ── 场景按钮：紧凑 + 浅金边框，视觉延续卡片 ── */
-.scene-btn-grid [data-testid="stButton"] button {
-    margin-top: 0 !important;
-    margin-bottom: 0.3rem !important;
-    background: #f5f0e8 !important;
-    color: #b8860b !important;
-    border: 1px solid #b8860b !important;
+/* page_link 在 .scene-card-grid 内渲染成卡片样式 */
+.scene-card-grid [data-testid="stPageLink-NavLink"] {
+    background: linear-gradient(135deg, #f5f0e8, #e8dfd0) !important;
+    color: #2c1810 !important;
+    border: 1px solid #d4c5a9 !important;
+    border-radius: 16px !important;
+    padding: 1.2rem 1rem !important;
+    text-align: left !important;
     font-size: 0.85rem !important;
-    padding: 0.4rem 0.6rem !important;
+    line-height: 1.6 !important;
+    white-space: pre-line !important;
+    height: auto !important;
+    min-height: 110px !important;
+    display: flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    transition: all 0.3s !important;
+}
+.scene-card-grid [data-testid="stPageLink-NavLink"]:hover {
+    background: linear-gradient(135deg, #b8860b, #d4a574) !important;
+    color: #fff !important;
+    border-color: #b8860b !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(44,24,16,0.12) !important;
 }
 
 /* ── 导航：flex-wrap 自动换行 ── */
