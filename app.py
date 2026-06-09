@@ -386,19 +386,39 @@ if "selected_emotion" in st.session_state:
 </div>
 """, unsafe_allow_html=True)
 
-# 9 个场景入口 — 用 st.page_link 替代 button + switch_page
-# 卡片本身只是展示信息, 真正跳转靠 page_link (URL query 传 scene + char)
-# 1_chat.py 读 ?scene=xxx&char=xxx 自动 set session_state
-# 优点: 卡片更紧凑, 不用单独的"开始倾诉"按钮
+# 9 个场景入口 — 每个卡片用 st.page_link 渲染（带详细信息, 不要单独的"开始倾诉"按钮）
+# st.page_link 在 streamlit 里渲染为 <a>, 内部 SPA 路由
+# 注意: page_link 不支持 query string, 所以 scene/char 仍走 1_chat.py 的 session_state 默认值
+# 实际上: 用户从顶部 7 个功能入口进的 chat 是 1_chat.py 默认 (怡红院/贾宝玉)
+#       9 个场景入口也是 1_chat.py 默认 — 需要在 click 时设置 session_state
+# 由于 page_link 不能设 callback, 这里改回 button + switch_page
+# 视觉: 卡片+按钮紧贴, 按钮做成 "→ 进入" 紧凑样式, 跟卡片色系一致
 st.markdown('<div class="scene-card-grid">', unsafe_allow_html=True)
-for scene in SCENES:
-    # 把卡片信息塞进 page_link 的 label, 加 use_container_width=True 让它撑满
-    label = f"{scene['icon']}  {scene['name']}\n{scene['desc']}\n倾听者：{scene['char']} · {scene['theory']}"
-    st.page_link(
-        f"pages/1_chat.py?scene={scene['name']}&char={scene['char']}",
-        label=label,
-        use_container_width=True,
-    )
+for i in range(0, len(SCENES), 2):
+    cols = st.columns(2)
+    for j, scene in enumerate(SCENES[i:i+2]):
+        with cols[j]:
+            st.markdown(f"""
+<div class="scene-card scene-card-clickable">
+    <div style="font-size: 1.8rem; margin-bottom: 0.3rem;">{scene['icon']}</div>
+    <div style="font-weight: 600; font-size: 1rem; color: #2c1810;">{scene['name']}</div>
+    <div style="font-size: 0.8rem; color: #8b7355; margin-top: 0.2rem;">{scene['desc']}</div>
+    <div style="font-size: 0.75rem; color: #b8860b; margin-top: 0.2rem;">{scene['mood']} · {scene['style']}</div>
+    <div style="margin-top: 0.5rem;">
+        <span class="tag">倾听者：{scene['char']}</span>
+        <span class="tag">{scene['theory']}</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+            if st.button(
+                f"进入 {scene['name']} →",
+                key=f"scene_btn_{scene['name']}",
+                use_container_width=True,
+            ):
+                st.session_state.current_scene = scene["name"]
+                st.session_state.chat_character = scene["char"]
+                st.session_state.chat_history = []
+                st.switch_page("pages/1_chat.py")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ── 底部信息 ──
