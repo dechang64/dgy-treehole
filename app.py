@@ -386,40 +386,71 @@ if "selected_emotion" in st.session_state:
 </div>
 """, unsafe_allow_html=True)
 
-# 9 个场景入口 — 每个卡片用 st.page_link 渲染（带详细信息, 不要单独的"开始倾诉"按钮）
-# st.page_link 在 streamlit 里渲染为 <a>, 内部 SPA 路由
-# 注意: page_link 不支持 query string, 所以 scene/char 仍走 1_chat.py 的 session_state 默认值
-# 实际上: 用户从顶部 7 个功能入口进的 chat 是 1_chat.py 默认 (怡红院/贾宝玉)
-#       9 个场景入口也是 1_chat.py 默认 — 需要在 click 时设置 session_state
-# 由于 page_link 不能设 callback, 这里改回 button + switch_page
-# 视觉: 卡片+按钮紧贴, 按钮做成 "→ 进入" 紧凑样式, 跟卡片色系一致
+# 9 个场景入口 — 卡片本身就是入口 (整张可点)
+# 用 st.components.v1.html 渲染带 onClick 的 HTML 卡片
+# JS 通过 setComponentValue 通知 Python, Python 读值后 switch_page
+import streamlit.components.v1 as components
+
 st.markdown('<div class="scene-card-grid">', unsafe_allow_html=True)
-for i in range(0, len(SCENES), 2):
-    cols = st.columns(2)
-    for j, scene in enumerate(SCENES[i:i+2]):
-        with cols[j]:
-            st.markdown(f"""
-<div class="scene-card scene-card-clickable">
-    <div style="font-size: 1.8rem; margin-bottom: 0.3rem;">{scene['icon']}</div>
-    <div style="font-weight: 600; font-size: 1rem; color: #2c1810;">{scene['name']}</div>
-    <div style="font-size: 0.8rem; color: #8b7355; margin-top: 0.2rem;">{scene['desc']}</div>
-    <div style="font-size: 0.75rem; color: #b8860b; margin-top: 0.2rem;">{scene['mood']} · {scene['style']}</div>
-    <div style="margin-top: 0.5rem;">
+cols = st.columns(2)
+for i, scene in enumerate(SCENES):
+    with cols[i % 2]:
+        # 渲染可点击卡片 (iframe sandbox 内, JS 通过 postMessage 与 streamlit 通信)
+        # streamlit 暴露 window.parent.Streamlit.setComponentValue
+        card_html = f"""
+<div class="scene-card scene-card-clickable" data-scene="{scene['name']}" data-char="{scene['char']}" style="cursor:pointer;">
+    <div style="font-size: 1.6rem; margin-bottom: 0.2rem;">{scene['icon']}</div>
+    <div style="font-weight: 600; font-size: 1.05rem; color: #2c1810; margin-bottom: 0.2rem;">{scene['name']}</div>
+    <div style="font-size: 0.78rem; color: #8b7355; margin-bottom: 0.2rem;">{scene['desc']}</div>
+    <div style="margin-top: 0.4rem;">
+        <span class="tag">{scene['mood']} · {scene['style']}</span>
         <span class="tag">倾听者：{scene['char']}</span>
         <span class="tag">{scene['theory']}</span>
     </div>
+    <div style="margin-top: 0.5rem; color: #b8860b; font-size: 0.8rem; text-align: right;">
+        点此进入 →
+    </div>
 </div>
-""", unsafe_allow_html=True)
-            if st.button(
-                f"进入 {scene['name']} →",
-                key=f"scene_btn_{scene['name']}",
-                use_container_width=True,
-            ):
-                st.session_state.current_scene = scene["name"]
-                st.session_state.chat_character = scene["char"]
-                st.session_state.chat_history = []
-                st.switch_page("pages/1_chat.py")
+"""
+        # 用 html() 包裹并传 default_value, 接收点击事件
+        _cv = components.html(
+            f"""
+{card_html}
+<script>
+(function() {{
+    const cards = document.querySelectorAll('.scene-card-clickable');
+    cards.forEach(function(card) {{
+        card.addEventListener('click', function() {{
+            const scene = this.getAttribute('data-scene');
+            const char = this.getAttribute('data-char');
+            try {{
+                window.parent.Streamlit.setComponentValue({{
+                    scene: scene,
+                    char: char,
+                    ts: Date.now()
+                }});
+            }} catch(e) {{
+                console.error('Streamlit not accessible:', e);
+            }}
+        }});
+    }});
+}})();
+</script>
+""",
+            height=200,
+            scrolling=False,
+        )
 st.markdown('</div>', unsafe_allow_html=True)
+
+# 接收 component 返回的点击值 — 触发跳转
+# 注意: components.html 每次返回是单独实例, 需用 st.session_state 累积
+if _cv and isinstance(_cv, dict) and 'scene' in _cv:
+    _scene = _cv['scene']
+    if _scene in SCENE_MAP:
+        st.session_state.current_scene = _scene
+        st.session_state.chat_character = _cv.get('char', SCENE_MAP[_scene]['char'])
+        st.session_state.chat_history = []
+        st.rerun()
 
 # ── 底部信息 ──
 st.markdown("""
