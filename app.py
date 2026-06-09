@@ -386,39 +386,23 @@ if "selected_emotion" in st.session_state:
 </div>
 """, unsafe_allow_html=True)
 
-# 9 个场景入口 — 卡片本身就是入口 (整张可点)
-# 用 st.button + CSS 让它长得像 link (无背景/无边框/纯文字)
-# 按钮紧贴卡片下方, 视觉上融为一体
+# 9 个场景入口 — 整张卡片可点 (用 streamlit-extras link_button)
+# 关键: link_button 是真 <a>, 不依赖 iframe 跨域
+# URL 用 page name (不带 pages/ 前缀), query string 用 #? 形式
+# 1_chat.py 读 st.query_params 解析 scene/char
 st.markdown('<div class="scene-card-grid">', unsafe_allow_html=True)
-cols = st.columns(2)
-for i, scene in enumerate(SCENES):
-    with cols[i % 2]:
-        # 渲染卡片 HTML (展示信息)
-        st.markdown(f"""
-<div class="scene-card scene-card-clickable" style="margin-bottom: 0.2rem;">
-    <div style="font-size: 1.6rem; margin-bottom: 0.2rem;">{scene['icon']}</div>
-    <div style="font-weight: 600; font-size: 1.05rem; color: #2c1810; margin-bottom: 0.2rem;">{scene['name']}</div>
-    <div style="font-size: 0.78rem; color: #8b7355; margin-bottom: 0.2rem;">{scene['desc']}</div>
-    <div style="margin-top: 0.4rem;">
-        <span class="tag">{scene['mood']} · {scene['style']}</span>
-        <span class="tag">倾听者：{scene['char']}</span>
-        <span class="tag">{scene['theory']}</span>
-    </div>
-    <div style="margin-top: 0.4rem; color: #b8860b; font-size: 0.8rem; text-align: right;">
-        点击下方进入 →
-    </div>
-</div>
-""", unsafe_allow_html=True)
-        # 按钮: 透明背景, 像文字链接, 但实际能触发 switch_page
-        if st.button(
-            f"→ 进入 {scene['name']}",
-            key=f"enter_{scene['name']}",
-            use_container_width=True,
-        ):
-            st.session_state.current_scene = scene["name"]
-            st.session_state.chat_character = scene["char"]
-            st.session_state.chat_history = []
-            st.switch_page("pages/1_chat.py")
+from streamlit_extras.link_button import link_button
+for i in range(0, len(SCENES), 2):
+    cols = st.columns(2)
+    for j, scene in enumerate(SCENES[i:i+2]):
+        with cols[j]:
+            # link_button 渲染为 <a>, CSS 让它撑成完整卡片
+            link_button(
+                label=f"{scene['icon']}  {scene['name']}",
+                url=f"1_chat?scene={scene['name']}&char={scene['char']}",
+                key=f"scene_link_{scene['name']}",
+                use_container_width=True,
+            )
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ── 底部信息 ──

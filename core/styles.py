@@ -434,30 +434,33 @@ CSS = """<style>
     box-shadow: 0 8px 24px rgba(44,24,16,0.12);
 }
 
-/* 场景按钮: 紧贴卡片下沿, 文字链接样式, 视觉融入卡片 */
-.scene-card-grid [data-testid="stButton"] button {
-    background: transparent !important;
-    background-color: transparent !important;
-    color: #b8860b !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-size: 0.85rem !important;
-    padding: 0.4rem 0.6rem !important;
-    margin-top: 0 !important;
-    margin-bottom: 0.5rem !important;
+/* 场景链接按钮 (整张卡片可点) */
+.scene-card-grid [data-testid="stLinkButton"] a,
+.scene-card-grid a[data-testid="stLinkButton"] {
+    background: linear-gradient(135deg, #f5f0e8, #e8dfd0) !important;
+    color: #2c1810 !important;
+    border: 1px solid #d4c5a9 !important;
+    border-radius: 16px !important;
+    padding: 1.2rem 1rem !important;
+    text-align: left !important;
+    font-size: 0.95rem !important;
     font-weight: 500 !important;
     text-decoration: none !important;
-    text-align: right !important;
-    border-radius: 0 !important;
+    min-height: 100px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
 }
-.scene-card-grid [data-testid="stButton"] button:hover {
-    background: rgba(184,134,11,0.08) !important;
-    color: #b8860b !important;
-    text-decoration: underline !important;
-}
-.scene-card-grid [data-testid="stButton"] button:focus {
-    outline: none !important;
-    box-shadow: none !important;
+.scene-card-grid [data-testid="stLinkButton"] a:hover,
+.scene-card-grid a[data-testid="stLinkButton"]:hover {
+    background: linear-gradient(135deg, #b8860b, #d4a574) !important;
+    color: #fff !important;
+    border-color: #b8860b !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(44,24,16,0.12) !important;
 }
 
 /* ── 导航：flex-wrap 自动换行 ── */

@@ -11,7 +11,7 @@ from core.minimax_chat import chat
 from core.characters import get_character
 from core.emotion_detector import detect_emotion, compute_session_emotion_profile
 from core.fl_engine import submit_local_stats
-from core.config import MOCK_MODE
+from core.config import MOCK_MODE, SCENE_MAP
 
 # 自伤关键词（独立于情绪检测，必须100%命中）
 SELF_HARM_PATTERN = re.compile(
@@ -43,7 +43,20 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # ── 获取角色 ──
-# scene/char 通过 session_state 从 app.py 传过来 (button + switch_page 链路)
+# 优先读 URL query (?scene=xxx&char=yyy) — 来自 app.py 的 link_button
+_qp = st.query_params
+if "scene" in _qp:
+    _qp_scene = _qp["scene"]
+    if isinstance(_qp_scene, list):
+        _qp_scene = _qp_scene[0]
+    if _qp_scene in SCENE_MAP:
+        st.session_state.current_scene = _qp_scene
+        _qp_char = _qp.get("char", SCENE_MAP[_qp_scene]["char"])
+        if isinstance(_qp_char, list):
+            _qp_char = _qp_char[0]
+        st.session_state.chat_character = _qp_char
+        st.query_params.clear()  # 避免刷新重复触发
+
 character = st.session_state.get("chat_character", "贾宝玉")
 scene_name = st.session_state.get("current_scene", "怡红院")
 char_info = get_character(character)
