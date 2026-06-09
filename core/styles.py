@@ -434,21 +434,30 @@ CSS = """<style>
     box-shadow: 0 8px 24px rgba(44,24,16,0.12);
 }
 
-/* 场景按钮: 紧贴卡片, 视觉融入 */
+/* 场景按钮: 紧贴卡片下沿, 文字链接样式, 视觉融入卡片 */
 .scene-card-grid [data-testid="stButton"] button {
-    background: rgba(184,134,11,0.08) !important;
+    background: transparent !important;
+    background-color: transparent !important;
     color: #b8860b !important;
-    border: 1px dashed #b8860b !important;
-    border-radius: 0 0 12px 12px !important;
-    font-size: 0.82rem !important;
-    padding: 0.35rem 0.6rem !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 0.85rem !important;
+    padding: 0.4rem 0.6rem !important;
     margin-top: 0 !important;
     margin-bottom: 0.5rem !important;
     font-weight: 500 !important;
+    text-decoration: none !important;
+    text-align: right !important;
+    border-radius: 0 !important;
 }
 .scene-card-grid [data-testid="stButton"] button:hover {
-    background: #b8860b !important;
-    color: #fff !important;
+    background: rgba(184,134,11,0.08) !important;
+    color: #b8860b !important;
+    text-decoration: underline !important;
+}
+.scene-card-grid [data-testid="stButton"] button:focus {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 /* ── 导航：flex-wrap 自动换行 ── */
