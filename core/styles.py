@@ -447,27 +447,40 @@ CSS = """<style>
     gap: 0.4rem !important;
     margin: 0.4rem 0 !important;
     justify-content: flex-start;
+    width: 100% !important;
 }
-.nav-flex-wrap [data-testid="stPageLink-NavLink"] {
+.nav-flex-wrap > * {
     flex: 0 1 auto !important;
-    display: inline-block !important;
     margin: 0 !important;
 }
-/* 桌面端：每个按钮均分 7 等分 (大约 14% 一行 7 个) */
-@media (min-width: 769px) {
-    .nav-flex-wrap [data-testid="stPageLink-NavLink"] {
-        flex: 0 1 calc(14.28% - 0.4rem) !important;
-        min-width: 90px !important;
-        text-align: center;
-    }
+.nav-flex-wrap a,
+.nav-flex-wrap [data-testid="stPageLink-NavLink"],
+.nav-flex-wrap a[data-testid="stPageLink-NavLink"] {
+    width: auto !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    display: inline-block !important;
+    box-sizing: border-box !important;
 }
 /* 移动端：每个按钮 30% (一行 3 个) */
 @media (max-width: 768px) {
+    .nav-flex-wrap a,
     .nav-flex-wrap [data-testid="stPageLink-NavLink"] {
         flex: 0 1 calc(33.33% - 0.3rem) !important;
-        text-align: center;
+        text-align: center !important;
         font-size: 0.78rem !important;
         padding: 0.4rem 0.2rem !important;
+        max-width: calc(33.33% - 0.3rem) !important;
+    }
+}
+/* 桌面端 (>= 769px)：每个按钮均分 7 等分 (大约 14% 一行 7 个) */
+@media (min-width: 769px) {
+    .nav-flex-wrap a,
+    .nav-flex-wrap [data-testid="stPageLink-NavLink"] {
+        flex: 0 1 calc(14.28% - 0.4rem) !important;
+        max-width: calc(14.28% - 0.4rem) !important;
+        text-align: center !important;
+        min-width: 90px !important;
     }
 }
 
