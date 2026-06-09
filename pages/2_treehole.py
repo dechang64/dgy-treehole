@@ -304,8 +304,9 @@ def get_healing_reply(
 
 # 当前回复的反馈 token — session_state 跟踪以防重复评分
 # ── TRACK-1-HEALING-CORE: feedback loop token ──
+# 用 dict-style 访问，避开 __setattr__ 路径（更兼容 streamlit 1.40+ 在 module 顶层的初始化）
 if "treehole_feedback_token" not in st.session_state:
-    st.session_state.treehole_feedback_token = 0
+    st.session_state["treehole_feedback_token"] = 0
 
 
 def _render_healing_and_feedback(
@@ -740,7 +741,7 @@ def _render_post_release_actions() -> None:
 
 # ── 初始化 session ──
 if "session_id" not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())[:8]
+    st.session_state["session_id"] = str(uuid.uuid4())[:8]
 _init_treehole_state()
 
 # ── 返回 ──
@@ -773,7 +774,8 @@ st.html(f"""
 """)
 
 # ── 树洞 Hero：古槐内腔，月光从树缝漏下 ──
-st.markdown("""
+# 用 st.html 避免 markdown 解析器在嵌套 div + 中文 + emoji 时的兼容 bug
+st.html("""
 <div class="treehole-hero">
     <div class="moon">🌕</div>
     <h2>古 · 树 · 洞</h2>
@@ -791,7 +793,7 @@ st.markdown("""
         💡 想留下共鸣？去「🌸 匿名共鸣」发布
     </p>
 </div>
-""", unsafe_allow_html=True)
+""")
 
 # ── 情绪上下文（来自倾诉旅程）──
 chat_history = st.session_state.get("chat_history", [])
