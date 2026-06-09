@@ -135,7 +135,8 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_posts_session ON posts(session_id);
             CREATE INDEX IF NOT EXISTS idx_warm_session ON post_warm_words(session_id);
 
-            -- track-1：树洞疗愈反馈（1-5 星评分，闭环）
+            -- TRACK-1-HEALING-CORE: 树洞疗愈反馈（1-5 星评分，闭环）
+            -- 字段：id, session_id, emotion, score, method, created_at
             CREATE TABLE IF NOT EXISTS treehole_feedback (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id TEXT NOT NULL,
@@ -418,12 +419,14 @@ def get_fl_rounds(limit: int = 20) -> list[dict]:
 
 
 # ═══════════════════════════════════════════════════════════
-#  树洞疗愈反馈（1-5 星评分，闭环）
+#  TRACK-1-HEALING-CORE: 树洞疗愈反馈（1-5 星评分，闭环）
 # ═══════════════════════════════════════════════════════════
 
 def record_treehole_feedback(session_id: str, score: int, emotion: str = "",
                              method: str = "") -> int:
     """记录一次树洞疗愈回复的反馈评分。
+
+    TRACK-1-HEALING-CORE: 1-5 星反馈入口，5 个评分 button 都调这个。
 
     Args:
         session_id: 会话 ID（来自 st.session_state.session_id）
@@ -445,7 +448,7 @@ def record_treehole_feedback(session_id: str, score: int, emotion: str = "",
 
 
 def get_feedback_stats(days: int = 7) -> dict:
-    """汇总近 N 天的反馈：平均分 + 各分数计数。"""
+    """汇总近 N 天的反馈：平均分 + 各分数计数。TRACK-1-HEALING-CORE 配套。"""
     with get_db() as db:
         cutoff = time.time() - days * 86400
         rows = db.execute(

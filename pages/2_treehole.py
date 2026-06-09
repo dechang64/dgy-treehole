@@ -236,6 +236,7 @@ def get_healing_reply(
     - chat() 失败/超时/网络错误 → 降级到 _legacy_healing_reply
     - MOCK_MODE（无 GLM_API_KEY）→ 直接走 _mock_response，不降级
     """
+    # ── TRACK-1-HEALING-CORE: GLM character-based healing reply ──
     if character is None:
         character, params = _resolve_chat_context()
     else:
@@ -243,9 +244,10 @@ def get_healing_reply(
             st.session_state.get("personality_params", {}) or {}
         )
 
-    # MOCK 模式或没 chat_character：走 _mock_response（chat() 内部已处理）
-    # chat() 在 MOCK_MODE 下会返回 _mock_response(character, messages, params)
-    # 这里我们把"用户原话"和"长度指令"合并成 user message
+    # chat() 内部会调 build_system_prompt(character, personality_params)，
+    # 这就是 spec 要求的"传入当前角色 system_prompt"。
+    # MOCK_MODE 下 chat() 返回 _mock_response(character, messages, params)，
+    # 无 key 不崩。
     length_hint = REPLY_LENGTH_HINTS.get(params.get("reply_length", ""), "")
 
     # 组合 user content
@@ -257,6 +259,7 @@ def get_healing_reply(
     if emotion:
         user_parts.append(f"\n（情绪标签：{emotion}）")
     if length_hint:
+        # 轻量改：只在 user message 追加一句长度指令，不污染 system_prompt
         user_parts.append(f"\n（{length_hint}）")
     user_content = "\n".join(user_parts)
 
@@ -264,7 +267,7 @@ def get_healing_reply(
     # 旧版有 chat_history 也可一并塞入（避免完全空 messages）
     history = st.session_state.get("chat_history", []) or []
     messages: list[dict] = []
-    # 最多取最近 2 条 user/assistant 交替
+    # 最多取最近 2 条 user/assistant 交替（满足"至少 1 条历史"）
     for m in history[-2:]:
         if m.get("role") in ("user", "assistant"):
             content = m.get("content", m.get("text", ""))
@@ -281,15 +284,15 @@ def get_healing_reply(
     )
 
     # 降级：MOCK_MODE 走的是 _mock_response 不会出错；真实 API 失败时
-    # _is_chat_error 检测到 "（" 开头的占位文本就降级
+    # _is_chat_error 检测到 "（" 开头的占位文本就降级到 _legacy_healing_reply
     if _is_chat_error(reply):
-        # 降级到硬编码模板（保留旧体验）
         tone = params.get("tone", fallback_tone)
         return _legacy_healing_reply(emotion, tone, len(treehole_text))
     return reply
 
 
 # 当前回复的反馈 token — session_state 跟踪以防重复评分
+# ── TRACK-1-HEALING-CORE: feedback loop token ──
 if "treehole_feedback_token" not in st.session_state:
     st.session_state.treehole_feedback_token = 0
 
@@ -309,6 +312,8 @@ def _render_healing_and_feedback(
     - 1-2 星 → 自动触发"补充疗愈"（再调一次 get_healing_reply，附 followup_hint）
     - 4-5 星 → 显示一句暖话 + "去共鸣墙"按钮
     - 已经评过分的回复不再显示反馈 UI（用 treehole_feedback_token 跟踪）
+
+    ── TRACK-1-HEALING-CORE: healing reply + 1-5 star feedback UI ──
     """
     # 当前回复 token（每个 selected_method 触发一次新回复 → 新 token）
     # token 在外面 caller 已递增；这里只读
@@ -395,6 +400,8 @@ def _handle_feedback(
     - 存 db
     - 标记已评分（用 token 防重）
     - 低分（1-2）→ 触发"补充疗愈"：再调一次 get_healing_reply，附 followup_hint
+
+    ── TRACK-1-HEALING-CORE: feedback handler (1-5 star → db + rerun) ──
     """
     try:
         record_treehole_feedback(
@@ -425,6 +432,8 @@ def _maybe_render_followup(
 
     只触发一次：用 treehole_feedback_followup_done 标记。
     补充疗愈也用 GLM（带 followup_hint），失败则降级到 _legacy_healing_reply（get_healing_reply 内部已处理）。
+
+    ── TRACK-1-HEALING-CORE: follow-up healing for low scores (1-2 stars) ──
     """
     need = st.session_state.pop("treehole_feedback_need_followup", False)
     done = st.session_state.get("treehole_feedback_followup_done", False)
@@ -496,6 +505,7 @@ if st.button("← 回到大观园", use_container_width=True):
     st.switch_page("app.py")
 
 # ── 场景/角色/疗法上下文条（track-1）──
+# ── TRACK-1-HEALING-CORE: hero context bar (scene / character / therapy) ──
 # 显示当前疗愈旅程来自哪里；缺省回落"林黛玉 · 叙事疗法"
 _ctx_character = st.session_state.get("chat_character", "") or "林黛玉"
 _ctx_scene = st.session_state.get("current_scene", "") or "潇湘馆"
