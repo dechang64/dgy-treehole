@@ -85,7 +85,68 @@ def test_emotion_detector():
     assert len(profile) > 0
     assert sum(profile.values()) > 0
 
+    # ── track-2：否定词降权（"我想念" → 悲伤被否 → 平静）──
+    # 注意"不知道"作为一个词，"不"不是真否定 → 仍判定为迷茫
+    assert detect_emotion("我不知道未来在哪里") == "迷茫"
+
     print("  ✅ emotion_detector: all 12 emotions detected correctly")
+
+
+def test_emotion_detector_negation():
+    """track-2：否定词降权 — "不X" 应识别为非 X
+
+    覆盖：
+    1. 简单否定 "我不想念" → 平静（悲伤被否）
+    2. 肯定 "我真的很难过" → 悲伤（保留）
+    3. 再否定 "我不再焦虑了" → 平静（焦虑被否）
+    4. 疲惫肯定/否定 "我累了" / "我不累" → 疲惫 / 平静
+    5. 双否定 "不是不难过" → 悲伤（双否定=肯定）
+    6. 跨子句 "我不再焦虑，也不想念" → 平静（两个情绪都被否）
+    7. 部分否定 "我很难过，也想念他" → 悲伤（想念保持，没被否）
+    8. "没哭" → 平静（悲伤被否）
+    9. detect_emotions_multi 也应一致
+    """
+    # 1. 简单否定
+    assert detect_emotion("我不想念他") == "平静", \
+        "'我不想念' 应识别为平静（悲伤被否）"
+    assert detect_emotion("我不想念") == "平静"
+
+    # 2. 肯定保持
+    assert detect_emotion("我真的很难过") == "悲伤", \
+        "'我真的很难过' 应识别为悲伤（无否定）"
+
+    # 3. "再" filler
+    assert detect_emotion("我不再焦虑了") == "平静", \
+        "'我不再焦虑了' 应识别为平静（焦虑被否）"
+
+    # 4. 疲惫
+    assert detect_emotion("我累了") == "疲惫"
+    assert detect_emotion("我不累") == "平静", \
+        "'我不累' 应识别为平静（疲惫被否）"
+
+    # 5. 双否定
+    assert detect_emotion("不是不难过") == "悲伤", \
+        "'不是不难过' 双否定=肯定 → 悲伤"
+
+    # 6. 跨子句
+    assert detect_emotion("我不再焦虑，也不想念") == "平静", \
+        "'我不再焦虑，也不想念' 两个情绪都被否 → 平静"
+
+    # 7. 部分否定
+    assert detect_emotion("我很难过，也想念他") == "悲伤", \
+        "'我很难过，也想念他' 想念未被否 → 悲伤"
+
+    # 8. "没"
+    assert detect_emotion("我没哭") == "平静", \
+        "'我没哭' 悲伤被否 → 平静"
+
+    # 9. multi 版应一致
+    multi = detect_emotions_multi("我不想念他")
+    assert multi == {"平静": 1.0}, f"'我不想念' multi 应是 {{'平静': 1.0}}，得到 {multi}"
+    multi2 = detect_emotions_multi("我不再焦虑，也不想念")
+    assert multi2 == {"平静": 1.0}, f"两个情绪都被否 multi 应是 {{'平静': 1.0}}，得到 {multi2}"
+
+    print("  ✅ emotion_detector negation: 否定词降权 + 双否定 + 跨子句 全过")
 
 
 def test_fl_engine():
@@ -214,6 +275,7 @@ if __name__ == "__main__":
     test_config()
     test_characters()
     test_emotion_detector()
+    test_emotion_detector_negation()  # track-2
     test_fl_engine()
     test_db()
     test_minimax_chat_mock()

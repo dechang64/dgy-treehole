@@ -4,10 +4,36 @@
 1. 聊天时实时标注用户情绪
 2. 树洞释放时记录情绪统计
 3. 联邦学习聚合的本地特征
+
+track-2 升级：
+- 加了 `_negate_scores()` helper：扫一遍"否定词 + 情绪关键词"组合
+  （如"不难过"、"不想念"、"没哭"、"无意义"），把那些情绪词的原始分降权 80%
+- 这样 "我不想念他" 不会误判为 "悲伤"，"我不累" 不会误判为 "疲惫"
+- detect_emotion / detect_emotions_multi 在算完原始分后调用一次 _negate_scores
 """
 
 import re
-from core.config import EMOTIONS
+
+# 否定词集合（覆盖中文里 90% 的否定场景）
+_NEGATION_WORDS = ("不", "别", "没", "无", "非", "未", "未尝", "没怎么", "不怎么", "不太")
+_NEGATION_RE = re.compile(
+    "(" + "|".join(re.escape(w) for w in _NEGATION_WORDS) + r")",
+    re.UNICODE,
+)
+# 否定词与情绪关键词之间允许的"填充词"（不破坏否定关系的虚词/副词）
+# 例： "我不再焦虑" 中"再"是 filler；"我不知道" 中"知道"不是 filler → 不断
+_NEGATION_FILLER = ("再", "会", "想", "太", "就", "也", "都", "又", "并", "再", "也")
+# 主语代词：在否定词之前是合法的（如"我不想念"中"我"在"不"前）
+_NEGATION_PRONOUNS = ("我", "你", "他", "她", "它", "们", "自己", "咱们", "我们", "你们", "他们", "她们")
+# 双否定（"不是不难过"）保持情绪为正向（"是"后面是"不难过" → 悲伤仍存在）
+_DOUBLE_NEG_RE = re.compile(
+    r"(不是|并非|并非不|不是不)\s*(不|别|没|无|非|未)\s*",
+    re.UNICODE,
+)
+# 子句边界字符（否定词若在这些位置之后，算"真正"的否定前缀）
+_CLAUSE_BOUNDARY = ("，", "。", "！", "？", "；", "、", " ", "\n", "\t", "(", "（", ".", ",", "!", "?", ";")
+# 降权系数：被否定的情绪词得分 × 0.2 （即降 80%）
+_NEGATION_PENALTY = 0.2
 
 # 情绪关键词映射（优先级从高到低）
 EMOTION_PATTERNS = {
@@ -85,7 +111,12 @@ EMOTION_WEIGHTS = {
 
 
 def detect_emotion(text: str) -> str:
-    """从文本中检测主要情绪，返回情绪标签"""
+    """从文本中检测主要情绪，返回情绪标签
+
+    track-2：在算完原始分后调用 _negate_scores，对被否定的情绪词降权 80%。
+    特殊处理：若唯一的情绪关键词被否定（其它情绪分都远低于它）→ 返回"平静"，
+    避免"我不想念"被误判为"悲伤"。
+    """
     if not text or not text.strip():
         return "平静"
 
@@ -96,13 +127,29 @@ def detect_emotion(text: str) -> str:
             scores[emotion] = len(matches) * EMOTION_WEIGHTS.get(emotion, 1.0)
 
     if not scores:
+        return "平静"
+
+    # 否定词降权（如 "我不想念" → 悲伤分 ×0.2）
+    scores, negated = _negate_scores(text, scores)
+
+    if not scores:
+        return "平静"
+
+    # 特殊处理：所有匹配的情绪都被否定 → 平静
+    # 例 "我不再焦虑，也不想念" → 焦虑 1.3→0.26, 悲伤 1.5→0.3 → 平静
+    # 例 "我不想念" → 悲伤 1.5→0.3 → 平静
+    if negated and all(emo in negated for emo in scores):
         return "平静"
 
     return max(scores, key=scores.get)
 
 
 def detect_emotions_multi(text: str) -> dict[str, float]:
-    """检测文本中的多种情绪，返回 {情绪: 得分} 字典"""
+    """检测文本中的多种情绪，返回 {情绪: 得分} 字典
+
+    track-2：同样在算完原始分后应用 _negate_scores。
+    若所有情绪都被否定 → 返回 {"平静": 1.0}。
+    """
     if not text or not text.strip():
         return {"平静": 1.0}
 
@@ -115,9 +162,165 @@ def detect_emotions_multi(text: str) -> dict[str, float]:
     if not scores:
         return {"平静": 1.0}
 
+    # 否定词降权
+    scores, negated = _negate_scores(text, scores)
+
+    if not scores:
+        return {"平静": 1.0}
+
+    # 所有情绪都被否定 → 平静
+    if negated and all(emo in negated for emo in scores):
+        return {"平静": 1.0}
+
     # 归一化
     total = sum(scores.values())
     return {k: round(v / total, 3) for k, v in scores.items()}
+
+
+def _is_filler_only(s: str) -> bool:
+    """检查字符串是否只由"否定词填充词"组成（0-2 字符）。
+
+    用于判断否定词与情绪关键词之间的内容是否为合法 filler
+    （如"我不再焦虑"中"再"是 filler，"不知道"中"知道"不是）。
+
+    允许 0-2 个字符的 filler（再/会/想/太/就/也/都/又/并）+ 任意标点/空白。
+    """
+    if not s:
+        return True
+    # 最多 2 个 filler 字符
+    filler_count = 0
+    for ch in s:
+        if ch in _NEGATION_FILLER:
+            filler_count += 1
+            if filler_count > 2:
+                return False
+        elif ch in _CLAUSE_BOUNDARY:
+            continue
+        else:
+            return False
+    return True
+
+
+def _is_negation_prefix(s: str) -> bool:
+    """检查字符串是否可作为"否定词前缀"（出现在否定词之前）。
+
+    合法前缀组合：
+    - 0-1 个主语代词 (我/你/他/她/它/们) + 0-1 个填充词 (再/会/...) + 任意标点
+    - 例: "我" (pronoun) → ✓  (出现在"不想念"前)
+    - 例: "我再" (pronoun + filler) → ✓
+    - 例: "下" (real word) → ✗
+    """
+    if not s:
+        return True
+    pronoun_count = 0
+    filler_count = 0
+    for ch in s:
+        if ch in _NEGATION_PRONOUNS:
+            pronoun_count += 1
+            if pronoun_count > 1:
+                return False
+        elif ch in _NEGATION_FILLER:
+            filler_count += 1
+            if filler_count > 1:
+                return False
+        elif ch in _CLAUSE_BOUNDARY:
+            continue
+        else:
+            return False
+    return True
+
+
+def _negate_scores(text: str, raw_scores: dict[str, float]) -> tuple[dict[str, float], set[str]]:
+    """否定词降权：扫一遍"否定词 + 情绪关键词"组合，把对应情绪分降权。
+
+    工作机制：
+    1. 先把双否定片段（"不是不"/"并非不"）替换成占位符（双否定=肯定，不降权）
+    2. 对每个情绪的每个关键词，看它的前面 ~3 字符窗口：
+       - 窗口内必须有否定词（不/别/没/无/非/未 等）
+       - 否定词与关键词之间只允许"再/会/想/太..."等填充词，不允许实词
+       - 否定词必须出现在子句边界后（标点/句首）才算"真否定"
+         —— 这条避免 "不知道" 里的"不"被误判
+    3. 满足以上所有条件即认为该情绪被否定
+
+    Args:
+        text: 用户原始文本
+        raw_scores: {emotion: raw_score} 计算出的原始分
+
+    Returns:
+        (adjusted_scores, negated_emotions)：
+        - adjusted_scores: 应用否定词后的分（被否定的 ×0.2）
+        - negated_emotions: 哪些情绪被否定
+
+    Examples:
+        >>> _negate_scores("我不想念他", {"悲伤": 1.5})
+        ({"悲伤": 0.3}, {"悲伤"})        # "不" 直接接 "想念"
+        >>> _negate_scores("我不再焦虑了", {"焦虑": 1.3})
+        ({"焦虑": 0.26}, {"焦虑"})       # "不" + filler "再" + "焦虑"
+        >>> _negate_scores("我不知道未来", {"迷茫": 1.0})
+        ({"迷茫": 1.0}, set())           # "不知道" 是一个词，"不"不算否定前缀
+        >>> _negate_scores("我不是不难过", {"悲伤": 1.5})
+        ({"悲伤": 1.5}, set())           # 双否定=肯定
+    """
+    if not text or not raw_scores:
+        return raw_scores, set()
+
+    # 1. 双否定：先把 "不是不X" / "并非不X" 里的内层否定词替换成空格
+    placeholder = "\x00" * 4
+    processed = _DOUBLE_NEG_RE.sub(
+        lambda m: m.group(0).replace(m.group(2), placeholder), text
+    )
+
+    # 2. 对每个情绪，看哪些关键词前 ~3 字符窗口内是"真否定"
+    negated_emotions: set[str] = set()
+    NEG_WINDOW = 3  # 否定词与关键词之间最多 3 个字符
+
+    for emotion, pattern in EMOTION_PATTERNS.items():
+        for kw_match in pattern.finditer(processed):
+            kw_start = kw_match.start()
+            # 取关键词前的窗口
+            window_start = max(0, kw_start - NEG_WINDOW)
+            window = processed[window_start:kw_start]
+
+            # 找窗口里的否定词
+            neg_match = _NEGATION_RE.search(window)
+            if not neg_match:
+                continue
+
+            # 条件 1：否定词必须"在子句边界后"或"是窗口的第 0 个字符"
+            # 即：否定词前面是 标点/句首/主语代词
+            neg_pos = neg_match.start()
+            chars_before_neg = window[:neg_pos]
+            if chars_before_neg:
+                # 否定词前面必须是 标点/句首/0-1 个填充词/主语代词
+                # 不允许出现实词（如"我不知道"中"我"是主语代词 OK，
+                # "再不知道"中"再"是 filler OK，但"下不知道"中"下"是实词 → 不算真否定）
+                allowed = all(c in _CLAUSE_BOUNDARY for c in chars_before_neg)
+                if not allowed:
+                    # 不是纯标点：拆成"代词"+"填充词"+"标点" 来看
+                    # 简化：chars_before_neg 必须只由 [主语代词][填充词][标点] 构成
+                    # 这里用 _is_negation_prefix 函数判断
+                    if not _is_negation_prefix(chars_before_neg):
+                        continue
+
+            # 条件 2：否定词与关键词之间只允许填充词
+            chars_after_neg = window[neg_match.end():]
+            if chars_after_neg and not _is_filler_only(chars_after_neg):
+                # 后面有实词 → 否定词可能不是针对这个关键词
+                continue
+
+            negated_emotions.add(emotion)
+            break  # 一个情绪有一个关键词被否定就够了
+
+    if not negated_emotions:
+        return raw_scores, set()
+
+    # 3. 应用降权
+    adjusted = dict(raw_scores)
+    for emotion in negated_emotions:
+        if emotion in adjusted:
+            adjusted[emotion] = round(adjusted[emotion] * _NEGATION_PENALTY, 4)
+
+    return adjusted, negated_emotions
 
 
 def compute_session_emotion_profile(messages: list[dict]) -> dict[str, float]:

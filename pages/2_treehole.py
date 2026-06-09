@@ -11,6 +11,12 @@ track-1 升级：
 - 含 1-5 星反馈闭环（低分触发补充疗愈，高分引导去共鸣墙）
 - hero 顶部显示当前场景/角色/疗法上下文
 - 读取 personality_params["reply_length"] 控制回复长度
+
+track-2 升级：
+- 首屏引导：3x4 情绪按钮 + 9 场景 grid，让用户先点选再写（降低倾诉门槛）
+- 文本框可选：用户即使没写字也可以直接释放
+- 释放后"沉淀到共鸣"：3 个按钮（发布到共鸣墙 / 再来一次 / 回到大观园）
+- 文本框 placeholder 随所选情绪变化
 """
 
 import random
@@ -18,10 +24,15 @@ import uuid
 import requests
 import tempfile
 import streamlit as st
-from core.config import RELEASE_METHODS, EMOTION_MUSIC_MAP, MUSIC_PLACES, MUSIC_MOODS
+from core.config import (
+    RELEASE_METHODS, EMOTION_MUSIC_MAP, MUSIC_PLACES, MUSIC_MOODS,
+    EMOTION_ICONS, EMOTION_PLACEHOLDERS, SCENE_FIT_HINTS, SCENES, SCENE_MAP,
+)
 from core.emotion_detector import detect_emotion, compute_session_emotion_profile
 from core.fl_engine import submit_local_stats
-from core.db import record_treehole, get_treehole_stats, record_treehole_feedback
+from core.db import (
+    record_treehole, get_treehole_stats, record_treehole_feedback, create_post,
+)
 from core.minimax_chat import chat
 from core.characters import get_character
 
@@ -496,9 +507,241 @@ def get_music_recommendation(emotion: str) -> tuple[str, str]:
     scene = scene_map.get(emotion, "稻香村")
     return scene, mood
 
+
+# ═══════════════════════════════════════════════════════════
+#  track-2：首屏引导 + 释放后"沉淀到共鸣"
+# ═══════════════════════════════════════════════════════════
+
+def _init_treehole_state() -> None:
+    """初始化首屏引导 + 释放后流程的 session_state 字段。
+
+    ── TRACK-2-TREEHOLE-FLOW: state init for first-screen guide + release sediment ──
+    """
+    if "treehole_emotion" not in st.session_state:
+        # 用户在首屏 3x4 网格点选的情绪（默认 None = 还没选）
+        st.session_state.treehole_emotion = None
+    if "treehole_scene" not in st.session_state:
+        # 用户在 9 场景 grid 点选的场景（默认 None = 还没选）
+        st.session_state.treehole_scene = None
+    if "treehole_release_done" not in st.session_state:
+        # 当前是否已释放过（释放后展示"沉淀到共鸣"按钮组）
+        st.session_state.treehole_release_done = False
+    if "treehole_post_confirm_open" not in st.session_state:
+        # "发布到共鸣墙"二次确认是否展开
+        st.session_state.treehole_post_confirm_open = False
+    if "treehole_last_text" not in st.session_state:
+        # 暂存当次释放的文本（供发布到共鸣时用）
+        st.session_state.treehole_last_text = ""
+
+
+def _render_emotion_grid() -> None:
+    """首屏 3x4 情绪按钮网格。
+
+    12 个情绪，按 4 列 × 3 行排列：
+    - 每个按钮显示 icon + 中文名
+    - 点选后该按钮高亮，存到 st.session_state.treehole_emotion
+    """
+    st.html("""
+<div style="text-align:center; margin: 0.6rem 0 0.3rem;">
+    <div style="font-size:0.95rem; color:#2c1810; font-weight:600;">今天，你心里装着什么？</div>
+    <div style="font-size:0.72rem; color:#8b7355; margin-top:0.2rem;">
+        点一下就好，不一定要写得很完整
+    </div>
+</div>
+""")
+
+    # 4 列 × 3 行 = 12 个情绪
+    cols_per_row = 4
+    for row_start in range(0, len(EMOTION_ICONS), cols_per_row):
+        row_emotions = list(EMOTION_ICONS.keys())[row_start:row_start + cols_per_row]
+        cols = st.columns(cols_per_row)
+        for i, emo in enumerate(row_emotions):
+            icon = EMOTION_ICONS[emo]
+            is_selected = (st.session_state.treehole_emotion == emo)
+            # 选中时显示勾选
+            label = f"{'✅ ' if is_selected else ''}{icon} {emo}"
+            btn_type = "primary" if is_selected else "secondary"
+            with cols[i]:
+                if st.button(
+                    label,
+                    key=f"emo_grid_{emo}",
+                    use_container_width=True,
+                    type=btn_type,
+                ):
+                    # 切换：再点同一项 = 取消选择
+                    if st.session_state.treehole_emotion == emo:
+                        st.session_state.treehole_emotion = None
+                    else:
+                        st.session_state.treehole_emotion = emo
+                        # 选情绪后，自动推荐一个场景（但不强制）
+                        rec_scene, _ = get_music_recommendation(emo)
+                        if not st.session_state.treehole_scene:
+                            st.session_state.treehole_scene = rec_scene
+                    st.rerun()
+
+
+def _render_scene_grid() -> None:
+    """9 场景 grid，每个场景显示 icon + name + "适合" 短句。
+
+    全部 9 场景都展示，可点选 1 个；点中后存到 st.session_state.treehole_scene。
+    未选情绪时也可点（独立选择）。
+    """
+    if not st.session_state.treehole_emotion:
+        st.html("""
+<div style="text-align:center; margin: 0.6rem 0 0.2rem; font-size:0.78rem; color:#8b7355;">
+    👆 先选一个情绪，下面会自动给你推荐一个场景
+</div>
+""")
+    else:
+        st.html(f"""
+<div style="text-align:center; margin: 0.6rem 0 0.2rem; font-size:0.78rem; color:#8b7355;">
+    现在的情绪：<strong style="color:#b8860b;">{st.session_state.treehole_emotion}</strong>
+    · 选一个最像你今天心情的场景（也可以不选）
+</div>
+""")
+
+    # 3 列 × 3 行 = 9 场景
+    cols_per_row = 3
+    for row_start in range(0, len(SCENES), cols_per_row):
+        row_scenes = SCENES[row_start:row_start + cols_per_row]
+        cols = st.columns(cols_per_row)
+        for i, scene in enumerate(row_scenes):
+            sname = scene["name"]
+            icon = scene["icon"]
+            fit = SCENE_FIT_HINTS.get(sname, scene.get("desc", ""))
+            is_selected = (st.session_state.treehole_scene == sname)
+            # 选中标记
+            label = f"{'✅ ' if is_selected else ''}{icon} {sname}\n{fit}"
+            btn_type = "primary" if is_selected else "secondary"
+            with cols[i]:
+                if st.button(
+                    label,
+                    key=f"scene_grid_{sname}",
+                    use_container_width=True,
+                    type=btn_type,
+                ):
+                    if st.session_state.treehole_scene == sname:
+                        st.session_state.treehole_scene = None
+                    else:
+                        st.session_state.treehole_scene = sname
+                    st.rerun()
+
+
+def _render_post_release_actions() -> None:
+    """释放完成后底部 3 个按钮：发布到共鸣墙 / 再来一次 / 回到大观园。
+
+    行为：
+    - "发布到共鸣墙" → 二次确认后调 create_post(source="treehole") + 跳共鸣页
+    - "再来一次" → 清状态 + rerun（用户回到首屏）
+    - "回到大观园" → 跳 app.py
+
+    ── TRACK-2-TREEHOLE-FLOW: post-release sediment to resonance ──
+    """
+    treehole_text = st.session_state.get("treehole_last_text", "")
+    emotion = st.session_state.get("treehole_last_emotion", "平静")
+    selected_scene = st.session_state.get("treehole_scene", "") or \
+        st.session_state.get("treehole_recommend_scene", "") or ""
+
+    st.html("""
+<div style="
+    margin-top: 1.2rem;
+    padding: 0.8rem 0.6rem;
+    background: rgba(184,134,11,0.06);
+    border-radius: 12px;
+    border: 1px dashed #d4c5a9;
+    text-align:center;
+">
+    <div style="font-size:0.85rem; color:#2c1810; font-weight:600; margin-bottom:0.3rem;">
+        🌸 想让这段话被听见吗？
+    </div>
+    <div style="font-size:0.72rem; color:#8b7355;">
+        发布到共鸣墙，会有人和你一起分担这份心情
+    </div>
+</div>
+""")
+
+    cols = st.columns(3)
+    with cols[0]:
+        # 发布按钮：treehole_text 为空时禁用
+        can_post = bool(treehole_text and treehole_text.strip())
+        if st.button(
+            "🌸 发布到共鸣墙",
+            key="post_to_resonance",
+            use_container_width=True,
+            disabled=not can_post,
+            help="把刚才写的话匿名发布到共鸣墙" if can_post else "需要先写点内容才能发布",
+        ):
+            if can_post:
+                st.session_state.treehole_post_confirm_open = True
+                st.rerun()
+    with cols[1]:
+        if st.button("🔁 再来一次", key="treehole_again", use_container_width=True):
+            # 清空所有暂存状态 + rerun
+            for k in [
+                "treehole_emotion", "treehole_scene", "treehole_release_done",
+                "treehole_post_confirm_open", "treehole_last_text", "treehole_last_emotion",
+                "treehole_last_character", "treehole_last_personality_params",
+                "treehole_recommend_scene", "treehole_selected_method",
+                "treehole_feedback_token", "treehole_feedback_followup_done",
+            ]:
+                st.session_state[k] = (
+                    None if k in ("treehole_emotion", "treehole_scene",
+                                  "treehole_release_done", "treehole_post_confirm_open",
+                                  "treehole_recommend_scene", "treehole_selected_method")
+                    else ("" if "text" in k or "emotion" in k or "character" in k
+                          else ({} if "params" in k else False))
+                )
+            st.rerun()
+    with cols[2]:
+        if st.button("🏠 回到大观园", key="treehole_home", use_container_width=True):
+            st.switch_page("app.py")
+
+    # ── 二次确认：发布到共鸣墙 ──
+    if st.session_state.get("treehole_post_confirm_open"):
+        st.html("""
+<div style="
+    margin-top: 0.8rem;
+    padding: 0.8rem;
+    background: #fff8e7;
+    border: 1px solid #d4a574;
+    border-radius: 8px;
+    text-align:center;
+">
+    <div style="font-size:0.82rem; color:#2c1810; margin-bottom:0.6rem;">
+        你确定要把这段话发布到共鸣墙吗？<br>
+        <span style="font-size:0.72rem; color:#8b7355;">
+            发布后其他人可以看到你的内容（不含身份）
+        </span>
+    </div>
+</div>
+""")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("✅ 确认发布", key="post_confirm_yes", type="primary", use_container_width=True):
+                try:
+                    post_id = create_post(
+                        content=treehole_text,
+                        emotion=emotion,
+                        scene=selected_scene,
+                        source="treehole",
+                        session_id=st.session_state.get("session_id", ""),
+                    )
+                    st.session_state.treehole_post_confirm_open = False
+                    st.success(f"🌸 已发布到共鸣墙（id={post_id}）")
+                    st.balloons()
+                    # 跳到共鸣页
+                    st.switch_page("pages/3_resonance.py")
+                except Exception as e:
+                    st.error(f"发布失败：{type(e).__name__}: {e}")
+        with c2:
+            if st.button("取消", key="post_confirm_no", use_container_width=True):
+                st.session_state.treehole_post_confirm_open = False
+                st.rerun()
+
 # ── 初始化 session ──
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())[:8]
+_init_treehole_state()
 
 # ── 返回 ──
 if st.button("← 回到大观园", use_container_width=True):
@@ -583,16 +826,48 @@ if chat_history:
 </div>
 """, unsafe_allow_html=True)
 
-# ── 输入 ──
-treehole_text = st.text_area(
-    "把你想说的话写在这里...",
-    height=120,
-    placeholder="这里只有你和风...",
-    label_visibility="collapsed",
-)
+# ═══════════════════════════════════════════════════════════
+#  track-2：首屏引导（情绪 → 场景 → 文本 → 释放）
+# ═══════════════════════════════════════════════════════════
 
-# ── 释放方式 ──
-if treehole_text:
+# ── 1. 情绪网格（3x4 = 12 个情绪）──
+_render_emotion_grid()
+
+# ── 2. 场景网格（3x3 = 9 个场景，情绪选完后展开）──
+_render_scene_grid()
+
+# ── 3. 文本输入（情绪选完后才展开；文本可选）──
+if st.session_state.treehole_emotion:
+    _selected_emo = st.session_state.treehole_emotion
+    _placeholder = EMOTION_PLACEHOLDERS.get(
+        _selected_emo, "把你想说的话写下来..."
+    )
+    # 在输入框上方显示当前选中的情绪
+    st.html(f"""
+<div style="margin-top: 0.8rem; margin-bottom: 0.3rem; font-size:0.78rem; color:#8b7355;">
+    选好了 · 现在写不写都行，不写也可以直接点释放 ↓
+</div>
+""")
+    treehole_text = st.text_area(
+        "把你想说的话写在这里...",
+        height=120,
+        placeholder=_placeholder,
+        label_visibility="collapsed",
+        key="treehole_text_input",
+    )
+else:
+    treehole_text = ""
+    # 提示用户先选情绪
+    st.html("""
+<div style="margin-top: 0.8rem; padding: 0.6rem; background: rgba(184,134,11,0.06);
+            border-radius: 8px; text-align:center; font-size:0.8rem; color:#8b7355;">
+    👆 先在上面点一个情绪，我们陪你慢慢来
+</div>
+""")
+
+# ── 4. 释放方式（情绪选完后一直可见，文本可选）──
+if st.session_state.treehole_emotion:
+    st.html("<div style='margin-top: 0.6rem;'></div>")
     st.markdown("### 选择释放方式")
     cols = st.columns(5)
     selected_method = None
@@ -605,11 +880,24 @@ if treehole_text:
                 use_container_width=True,
             ):
                 selected_method = key
+                st.session_state.treehole_selected_method = key
 
     # ── 释放动画 ──
     if selected_method:
         method_info = RELEASE_METHODS[selected_method]
-        emotion = detect_emotion(treehole_text)
+        # 优先用用户在首屏选的情绪；若文本有内容，再让 detect_emotion 覆盖
+        user_emo = st.session_state.treehole_emotion
+        if treehole_text and treehole_text.strip():
+            detected = detect_emotion(treehole_text)
+            # 检测结果与用户选择不一致时，优先用检测结果（数据驱动）
+            # 但若检测为"平静"且用户明确选了情绪，保留用户选择
+            if detected == "平静":
+                emotion = user_emo
+            else:
+                emotion = detected
+        else:
+            # 无文本 → 用用户手动选择的情绪
+            emotion = user_emo
 
         # 记录树洞统计
         try:
@@ -638,6 +926,11 @@ if treehole_text:
         st.session_state.treehole_last_emotion = emotion
         st.session_state.treehole_last_character = _character
         st.session_state.treehole_last_personality_params = _personality_params
+        # 标记释放已完成（用于底部 3 按钮显示）
+        st.session_state.treehole_release_done = True
+        # 暂存推荐场景（供发布到共鸣时用）
+        _rec_scene, _ = get_music_recommendation(emotion)
+        st.session_state.treehole_recommend_scene = _rec_scene
 
         # ── Layer 3: 静默模式 ──
         if selected_method == "silent":
@@ -661,15 +954,15 @@ if treehole_text:
                     "请刷新页面重试，或换个释放方式。"
                 )
 
-            # 个性化疗愈回复 + 反馈闭环
-            _render_healing_and_feedback(
-                treehole_text=treehole_text,
-                emotion=emotion,
-                method=selected_method,
-                character=_character,
-                personality_params=_personality_params,
-            )
-            # _maybe_render_followup 在外层统一处理（rerun 之后才执行）
+            # 个性化疗愈回复 + 反馈闭环（仅在用户写了文字时调用）
+            if treehole_text and treehole_text.strip():
+                _render_healing_and_feedback(
+                    treehole_text=treehole_text,
+                    emotion=emotion,
+                    method=selected_method,
+                    character=_character,
+                    personality_params=_personality_params,
+                )
 
             st.html(f"""
 <div style="text-align:center; margin-top: 0.5rem;">
@@ -719,15 +1012,15 @@ if treehole_text:
             if ambient_path:
                 st.audio(ambient_path, format="audio/mp3", autoplay=True)
 
-            # 个性化疗愈回复 + 反馈闭环
-            _render_healing_and_feedback(
-                treehole_text=treehole_text,
-                emotion=emotion,
-                method=selected_method,
-                character=_character,
-                personality_params=_personality_params,
-            )
-            # _maybe_render_followup 在外层统一处理（rerun 之后才执行）
+            # 个性化疗愈回复 + 反馈闭环（仅在用户写了文字时调用）
+            if treehole_text and treehole_text.strip():
+                _render_healing_and_feedback(
+                    treehole_text=treehole_text,
+                    emotion=emotion,
+                    method=selected_method,
+                    character=_character,
+                    personality_params=_personality_params,
+                )
 
             # 音乐推荐
             music_scene, music_mood = get_music_recommendation(emotion)
@@ -742,8 +1035,18 @@ if treehole_text:
 </div>
 """)
 
-        if st.button("🏠 回到大观园", use_container_width=True):
-            st.rerun()
+        # ── track-2：释放后"沉淀到共鸣"3 按钮（在所有释放方式下都显示）──
+        _render_post_release_actions()
+
+# ── track-2：star feedback rerun 后也显示"沉淀到共鸣"3 按钮 ──
+# 当 selected_method (local) 为 None 但 session_state 里记着上次的释放方式时，
+# 说明是评分/star 触发的 rerun —— 这种情况下也要让用户能继续操作
+if (
+    st.session_state.treehole_release_done
+    and not selected_method
+    and st.session_state.get("treehole_selected_method")
+):
+    _render_post_release_actions()
 
 # ── track-1：低分反馈的"补充疗愈"必须在 rerun 后仍能渲染 ──
 # 单独拎到这里，不依赖 if selected_method: 分支（rating star 点击会触发 rerun）
