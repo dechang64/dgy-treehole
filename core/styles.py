@@ -527,6 +527,217 @@ CSS = """<style>
     margin: 0.8rem 0 0.4rem;
     color: #2c1810;
 }
+
+/* ── track-3：共鸣页 post-card / warm-word / emotion-bar ── */
+.post-card {
+    background: #f5f0e8;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin: 0.6rem 0;
+    border: 1px solid #e8dfd0;
+    border-left: 3px solid #b8860b;
+    position: relative;
+}
+.post-card .post-content {
+    line-height: 1.8;
+    color: #2c1810;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.post-card .post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+    margin-top: 0.6rem;
+    font-size: 0.72rem;
+    color: #8b7355;
+}
+.post-card .post-meta .src-tag {
+    background: rgba(45,106,79,0.12);
+    color: #2d6a4f;
+    padding: 0.1rem 0.45rem;
+    border-radius: 99px;
+}
+.post-card .post-actions {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    margin-top: 0.6rem;
+    flex-wrap: wrap;
+}
+.post-card .resonate-count {
+    color: #c0392b;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-right: 0.3rem;
+}
+
+/* 温暖留言行 */
+.warm-word {
+    background: rgba(184,134,11,0.06);
+    border-left: 2px solid #b8860b;
+    padding: 0.4rem 0.7rem;
+    margin: 0.3rem 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.85rem;
+    color: #2c1810;
+    line-height: 1.6;
+}
+.warm-word .warm-time {
+    font-size: 0.68rem;
+    color: #8b7355;
+    margin-top: 0.15rem;
+}
+.warm-word-empty {
+    text-align: center;
+    color: #8b7355;
+    font-size: 0.78rem;
+    padding: 0.5rem;
+    font-style: italic;
+}
+
+/* 情绪分布条 */
+.emotion-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.3rem 0;
+    font-size: 0.78rem;
+}
+.emotion-bar .bar-label {
+    width: 3.2em;
+    color: #2c1810;
+    font-weight: 500;
+    text-align: right;
+    flex-shrink: 0;
+}
+.emotion-bar .bar-track {
+    flex: 1;
+    background: #e8dfd0;
+    border-radius: 99px;
+    height: 14px;
+    overflow: hidden;
+    position: relative;
+}
+.emotion-bar .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #b8860b, #d4a574);
+    border-radius: 99px;
+    transition: width 0.6s ease-out;
+}
+.emotion-bar .bar-count {
+    width: 2.5em;
+    color: #8b7355;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+/* 今日一签卡 */
+.daily-sign {
+    background: linear-gradient(135deg, #2c1810, #4a2c1a);
+    color: #f5f0e8;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin: 0.6rem 0;
+    border: 1px solid #b8860b;
+    position: relative;
+    overflow: hidden;
+}
+.daily-sign::before {
+    content: '🌸';
+    position: absolute;
+    top: -10px;
+    right: -8px;
+    font-size: 4rem;
+    opacity: 0.15;
+}
+.daily-sign .sign-label {
+    font-size: 0.7rem;
+    color: #d4a574;
+    letter-spacing: 0.2rem;
+    margin-bottom: 0.4rem;
+}
+.daily-sign .sign-content {
+    line-height: 1.7;
+    font-size: 0.92rem;
+    position: relative;
+}
+.daily-sign .sign-footer {
+    font-size: 0.7rem;
+    color: #d4c5a9;
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+/* 匿名等级徽章 */
+.anon-tier {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0.3rem 0;
+}
+.anon-tier.tier-1 { background: rgba(45,106,79,0.12); color: #2d6a4f; }
+.anon-tier.tier-2 { background: rgba(184,134,11,0.12); color: #b8860b; }
+.anon-tier.tier-3 { background: rgba(192,57,43,0.12); color: #c0392b; }
+
+/* 匹配分组小标题 */
+.match-section-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #2c1810;
+    margin: 0.8rem 0 0.3rem;
+    padding-left: 0.4rem;
+    border-left: 3px solid #b8860b;
+}
+
+/* 顶部画像卡 */
+.emotion-profile {
+    background: linear-gradient(135deg, #f5f0e8, #e8dfd0);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    margin: 0.6rem 0;
+    border: 1px solid #d4c5a9;
+}
+.emotion-profile .profile-title {
+    font-size: 0.78rem;
+    color: #8b7355;
+    margin-bottom: 0.4rem;
+}
+.emotion-profile .profile-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+/* 报告模态（用 st 组件不需要；保留为将来参考） */
+.report-form {
+    background: #fff;
+    border: 1px solid #e8dfd0;
+    border-radius: 8px;
+    padding: 0.6rem;
+    margin: 0.4rem 0;
+    font-size: 0.85rem;
+}
+
+/* 紧凑按钮组（共鸣页用，避免按钮撑满整行） */
+.action-row {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+}
+.action-row [data-testid="stButton"] button {
+    padding: 0.25rem 0.7rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 99px !important;
+    min-height: 0 !important;
+    height: auto !important;
+}
 </style>"""
 
 import streamlit as st
