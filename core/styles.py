@@ -434,31 +434,33 @@ CSS = """<style>
     box-shadow: 0 8px 24px rgba(44,24,16,0.12);
 }
 
-/* 场景卡片 (用 st.page_link 渲染, 整张可点) */
-.scene-card-grid [data-testid="stPageLink-NavLink"] {
-    background: linear-gradient(135deg, #f5f0e8, #e8dfd0) !important;
-    color: #2c1810 !important;
-    border: 1px solid #d4c5a9 !important;
-    border-radius: 16px !important;
-    padding: 1.2rem 1rem !important;
-    text-align: center !important;
-    font-size: 0.95rem !important;
-    font-weight: 500 !important;
-    text-decoration: none !important;
-    min-height: 80px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    transition: all 0.3s !important;
-    box-sizing: border-box !important;
-    width: 100% !important;
-}
-.scene-card-grid [data-testid="stPageLink-NavLink"]:hover {
+/* 场景卡片 + 按钮合并 — 按钮撑成完整卡片样式 */
+.scene-card-grid [data-testid="stButton"] button {
     background: linear-gradient(135deg, #b8860b, #d4a574) !important;
     color: #fff !important;
-    border-color: #b8860b !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(44,24,16,0.12) !important;
+    border: none !important;
+    border-radius: 0 0 16px 16px !important;
+    padding: 0.6rem 1rem !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    margin-top: 0.4rem !important;
+    box-shadow: 0 4px 12px rgba(184,134,11,0.2) !important;
+    transition: all 0.2s !important;
+}
+.scene-card-grid [data-testid="stButton"] button:hover {
+    background: linear-gradient(135deg, #d4a574, #e8b86b) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(184,134,11,0.3) !important;
+}
+
+/* 卡片 HTML 部分 */
+.scene-card-inner {
+    background: linear-gradient(135deg, #f5f0e8, #e8dfd0);
+    border: 1px solid #d4c5a9;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    padding: 1.2rem 1rem;
+    text-align: left;
 }
 
 /* ── 导航：flex-wrap 自动换行 ── */

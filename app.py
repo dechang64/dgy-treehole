@@ -386,22 +386,40 @@ if "selected_emotion" in st.session_state:
 </div>
 """, unsafe_allow_html=True)
 
-# 9 个场景入口 — 整张卡片可点 (用 st.page_link)
-# st.page_link 是 streamlit 内置的真 <a> 链接, 1.40+ 稳定
-# URL: "1_chat?scene=xxx&char=yyy" (page name 不带 pages/ 前缀 + query)
-# 1_chat.py 读 st.query_params 解析
-# CSS 让 page_link 撑成完整卡片
+# 9 个场景入口 — 整张卡片本身是入口
+# streamlit 限制: page_link 不支持 query string, button + switch_page 才能传 scene
+# 终极方案: 用 st.button + CSS 让 button 撑成完整卡片 (无视觉按钮痕迹)
+# 整张卡片"就是"按钮, 因为 button 区域覆盖整个 card cell
 st.markdown('<div class="scene-card-grid">', unsafe_allow_html=True)
 for i in range(0, len(SCENES), 2):
     cols = st.columns(2)
     for j, scene in enumerate(SCENES[i:i+2]):
         with cols[j]:
-            st.page_link(
-                f"1_chat?scene={scene['name']}&char={scene['char']}",
-                label=f"{scene['icon']}  {scene['name']}",
-                key=f"scene_link_{scene['name']}",
+            # 渲染卡片 HTML
+            st.markdown(f"""
+<div class="scene-card-inner">
+    <div style="font-size: 1.6rem; margin-bottom: 0.2rem;">{scene['icon']}</div>
+    <div style="font-weight: 600; font-size: 1.05rem; color: #2c1810; margin-bottom: 0.2rem;">{scene['name']}</div>
+    <div style="font-size: 0.78rem; color: #8b7355;">{scene['desc']}</div>
+    <div style="margin-top: 0.4rem; font-size: 0.7rem;">
+        <span class="tag">{scene['mood']} · {scene['style']}</span>
+    </div>
+    <div style="margin-top: 0.4rem; font-size: 0.7rem;">
+        <span class="tag">倾听者：{scene['char']}</span>
+        <span class="tag">{scene['theory']}</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+            # 透明 button 紧跟卡片 — 撑成完整卡片样式, 覆盖整个 card cell
+            if st.button(
+                f"进入 {scene['name']} →",
+                key=f"enter_{scene['name']}",
                 use_container_width=True,
-            )
+            ):
+                st.session_state.current_scene = scene["name"]
+                st.session_state.chat_character = scene["char"]
+                st.session_state.chat_history = []
+                st.switch_page("pages/1_chat.py")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ── 底部信息 ──
