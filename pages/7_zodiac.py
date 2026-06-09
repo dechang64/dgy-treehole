@@ -95,7 +95,7 @@ with tab_zodiac:
 </div>
 
 <div style="padding:0.8rem;">
-    <!-- 星座信息卡 -->
+
     <div style="text-align:center;padding:0.8rem;background:#fff;border-radius:12px;
                 border:2px solid {color};margin-bottom:0.8rem;">
         <div style="font-size:1.8rem;">{icon}</div>
@@ -104,7 +104,6 @@ with tab_zodiac:
         <div style="font-size:0.72rem;color:{color};margin-top:0.2rem;">疗愈风格：{elem.get('style','')}</div>
     </div>
 
-    <!-- 推荐场景（对齐原版 .result-scene） -->
     <div class="result-scene">
         <div class="icon">{scene.get('icon','🌸')}</div>
         <div>
@@ -113,15 +112,14 @@ with tab_zodiac:
         </div>
     </div>
 
-    <!-- 适配理由（对齐原版 .result-reason） -->
     <div class="result-reason">{z['reason']}</div>
 
-    <!-- 元素专属建议（对齐原版） -->
     <div style="background:#e8dfd0;border-radius:10px;padding:0.8rem;margin:0.8rem 0;">
         <div style="font-size:0.78rem;color:{color};font-weight:600;margin-bottom:0.3rem;">
             💡 {z['elem']}象专属建议</div>
         <div style="font-size:0.82rem;line-height:1.7;">{elem.get('advice','')}</div>
     </div>
+
 </div>
 """, unsafe_allow_html=True)
 
