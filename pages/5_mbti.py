@@ -98,8 +98,8 @@ else:
 </div>
 """, unsafe_allow_html=True)
 
-    # MBTI 类型（对齐原版 .result-type）
-    st.markdown(f"""
+    # MBTI 类型（对齐原版 .result-type）—— 用 st.html() 绕开 markdown 解析器
+    st.html(f"""
 <div style="padding:0.8rem;">
     <div class="result-type">{mbti}</div>
     <div class="result-desc">{info['desc']}</div>
@@ -119,7 +119,7 @@ else:
 
     <div class="result-quote">"{info['quote']}"</div>
 </div>
-""", unsafe_allow_html=True)
+""")
 
     # 维度解析（4个维度卡片）
     st.markdown("### 维度解析")

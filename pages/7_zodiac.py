@@ -88,7 +88,7 @@ with tab_zodiac:
         icon = z["sign"].split(" ")[0]
         name = z["sign"].split(" ")[1]
 
-        st.markdown(f"""
+        st.html(f"""
 <div style="background:linear-gradient(135deg,#2c1810,#4a2c1a 50%,#3d1f0e);
             padding:1.5rem;color:#f5f0e8;text-align:center;border-radius:0 0 16px 16px;">
     <h1 style="font-size:1.4rem;">⭐ 星座指引结果</h1>
@@ -121,7 +121,7 @@ with tab_zodiac:
     </div>
 
 </div>
-""", unsafe_allow_html=True)
+""")
 
         # 操作按钮
         if st.button(f"{scene.get('icon','🌸')} 进入{z['scene']}", type="primary", use_container_width=True):
