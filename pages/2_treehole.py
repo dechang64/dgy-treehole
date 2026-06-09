@@ -86,8 +86,13 @@ FILENAME_MAP = {
 }
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
 def get_audio_file(place: str, mood: str) -> str | None:
+    """下载音乐文件并返回本地路径。
+
+    注意：不能用 @st.cache_data —— 临时文件路径在 Streamlit Cloud
+    多 worker 环境下无法跨用户共享，且文件随时会被 GC 清理。
+    改为每次重新下载，mp3 普遍 < 1MB，用户冷流 < 5s。
+    """
     chinese_name = f"{place}_{mood}.mp3"
     asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
     url = f"{RELEASE_BASE}/{asset_name}"
@@ -101,13 +106,14 @@ def get_audio_file(place: str, mood: str) -> str | None:
             tmp.write(chunk)
         tmp.close()
         return tmp.name
-    except Exception:
+    except Exception as e:
+        # 暴露真正错误而不是 swallow 掉
+        print(f"[get_audio_file] 下载失败: {url} | {type(e).__name__}: {e}")
         return None
 
 
-@st.cache_data(ttl=86400, show_spinner=False)
 def get_ambient_file(method: str) -> str | None:
-    """下载 ambient音效文件用于释放动画"""
+    """下载 ambient音效文件用于释放动画。详见 get_audio_file 的注释。"""
     url = f"{RELEASE_AMBIENT_BASE}/{method}.mp3"
     try:
         resp = requests.get(url, timeout=30, stream=True)
@@ -119,7 +125,8 @@ def get_ambient_file(method: str) -> str | None:
             tmp.write(chunk)
         tmp.close()
         return tmp.name
-    except Exception:
+    except Exception as e:
+        print(f"[get_ambient_file] 下载失败: {url} | {type(e).__name__}: {e}")
         return None
 
 
@@ -318,7 +325,6 @@ if treehole_text:
         # ── Layer 3: 静默模式 ──
         if selected_method == "silent":
             music_scene, music_mood = get_music_recommendation(emotion)
-            audio_path = get_audio_file(music_scene, music_mood)
 
             st.markdown("""
 <div style="text-align:center; padding: 2rem;" class="fade-in">
@@ -327,10 +333,16 @@ if treehole_text:
     <p style="color: #8b7355;">什么都不做，只是听</p>
 </div>""", unsafe_allow_html=True)
 
+            with st.spinner(f"正在为你加载 {music_scene} · {music_mood} ..."):
+                audio_path = get_audio_file(music_scene, music_mood)
+
             if audio_path:
-                st.audio(audio_path, format="audio/mp3")
+                st.audio(audio_path, format="audio/mp3", autoplay=True)
             else:
-                st.warning("音乐加载失败，请检查网络后重试。")
+                st.error(
+                    f"音乐加载失败（{music_scene} · {music_mood}）。"
+                    "请刷新页面重试，或换个释放方式。"
+                )
 
             # 个性化疗愈回复
             reply = get_healing_reply(emotion, personality_tone, len(treehole_text))
@@ -385,9 +397,10 @@ if treehole_text:
             st.markdown(animations[selected_method], unsafe_allow_html=True)
 
             # ── Layer 2: ambient音效（静默模式除外）──
-            ambient_path = get_ambient_file(selected_method)
+            with st.spinner(f"正在加载 {selected_method} 音效 ..."):
+                ambient_path = get_ambient_file(selected_method)
             if ambient_path:
-                st.audio(ambient_path, format="audio/mp3")
+                st.audio(ambient_path, format="audio/mp3", autoplay=True)
 
             # 个性化疗愈回复
             reply = get_healing_reply(emotion, personality_tone, len(treehole_text))

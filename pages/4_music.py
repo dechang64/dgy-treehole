@@ -154,8 +154,13 @@ def get_smart_recommendation():
 #  音频下载（复用之前逻辑）
 # ═══════════════════════════════════════════════════════════
 
-@st.cache_data(ttl=3600, show_spinner="正在加载音乐...")
 def get_audio_file(place: str, mood: str) -> str | None:
+    """下载音乐文件并返回本地路径。
+
+    注意：不能用 @st.cache_data —— 临时文件路径在 Streamlit Cloud
+    多 worker 环境下无法跨用户共享，且文件随时会被 GC 清理。
+    改为每次重新下载，mp3 普遍 < 1MB，用户冷流 < 5s。
+    """
     chinese_name = f"{place}_{mood}.mp3"
     asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
     url = f"{RELEASE_BASE}/{asset_name}"
