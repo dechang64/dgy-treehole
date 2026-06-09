@@ -386,20 +386,19 @@ if "selected_emotion" in st.session_state:
 </div>
 """, unsafe_allow_html=True)
 
-# 9 个场景入口 — 整张卡片可点 (用 streamlit-extras link_button)
-# 关键: link_button 是真 <a>, 不依赖 iframe 跨域
-# URL 用 page name (不带 pages/ 前缀), query string 用 #? 形式
-# 1_chat.py 读 st.query_params 解析 scene/char
+# 9 个场景入口 — 整张卡片可点 (用 st.page_link)
+# st.page_link 是 streamlit 内置的真 <a> 链接, 1.40+ 稳定
+# URL: "1_chat?scene=xxx&char=yyy" (page name 不带 pages/ 前缀 + query)
+# 1_chat.py 读 st.query_params 解析
+# CSS 让 page_link 撑成完整卡片
 st.markdown('<div class="scene-card-grid">', unsafe_allow_html=True)
-from streamlit_extras.link_button import link_button
 for i in range(0, len(SCENES), 2):
     cols = st.columns(2)
     for j, scene in enumerate(SCENES[i:i+2]):
         with cols[j]:
-            # link_button 渲染为 <a>, CSS 让它撑成完整卡片
-            link_button(
+            st.page_link(
+                f"1_chat?scene={scene['name']}&char={scene['char']}",
                 label=f"{scene['icon']}  {scene['name']}",
-                url=f"1_chat?scene={scene['name']}&char={scene['char']}",
                 key=f"scene_link_{scene['name']}",
                 use_container_width=True,
             )

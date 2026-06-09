@@ -434,19 +434,18 @@ CSS = """<style>
     box-shadow: 0 8px 24px rgba(44,24,16,0.12);
 }
 
-/* 场景链接按钮 (整张卡片可点) */
-.scene-card-grid [data-testid="stLinkButton"] a,
-.scene-card-grid a[data-testid="stLinkButton"] {
+/* 场景卡片 (用 st.page_link 渲染, 整张可点) */
+.scene-card-grid [data-testid="stPageLink-NavLink"] {
     background: linear-gradient(135deg, #f5f0e8, #e8dfd0) !important;
     color: #2c1810 !important;
     border: 1px solid #d4c5a9 !important;
     border-radius: 16px !important;
     padding: 1.2rem 1rem !important;
-    text-align: left !important;
+    text-align: center !important;
     font-size: 0.95rem !important;
     font-weight: 500 !important;
     text-decoration: none !important;
-    min-height: 100px !important;
+    min-height: 80px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -454,8 +453,7 @@ CSS = """<style>
     box-sizing: border-box !important;
     width: 100% !important;
 }
-.scene-card-grid [data-testid="stLinkButton"] a:hover,
-.scene-card-grid a[data-testid="stLinkButton"]:hover {
+.scene-card-grid [data-testid="stPageLink-NavLink"]:hover {
     background: linear-gradient(135deg, #b8860b, #d4a574) !important;
     color: #fff !important;
     border-color: #b8860b !important;
