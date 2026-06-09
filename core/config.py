@@ -1,5 +1,9 @@
 """全局配置：API密钥、常量、环境检测"""
 
+# 2026-06-09: bump config.py to force Streamlit Cloud to re-pull this file
+# (Cloud was running a stale core/config.py without EMOTION_ICONS/EMOTION_PLACEHOLDERS/SCENE_FIT_HINTS
+# added by track-2 commit 9c288cd, causing ImportError on 2_treehole.py import)
+
 import os
 
 # ── GLM API（智谱AI，OpenAI 兼容格式）──
