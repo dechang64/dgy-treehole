@@ -50,7 +50,7 @@ st.html("""
 """)
 
 # ═══════════════════════════════════════════════════════════
-#  🧭 区块 2：7 个功能导航（4 列 × 2 行，desktop & mobile 通用）
+#  🧭 区块 2：7 个功能导航 — 用 st.pills（mobile-native，inline 元素）
 # ═══════════════════════════════════════════════════════════
 st.html("""
 <div class="home-section">
@@ -62,73 +62,84 @@ st.html("""
 </div>
 """)
 
-# 7 个 nav：st.columns 强制 4 列；mobile 1 列是 streamlit 默认行为（无法绕过）
-st.html('<div class="home-nav-grid">')
+# 用 st.pills 渲染 — Streamlit 1.40+ 重新 expose，自带响应式
+# 选中后存到 st.session_state，模块末尾统一 switch_page
 nav_items = [
-    ("💬", "倾诉", "1_chat"),
-    ("🌳", "树洞", "2_treehole"),
-    ("🌸", "共鸣", "3_resonance"),
-    ("🎵", "音乐", "4_music"),
-    ("🔮", "MBTI", "5_mbti"),
-    ("⭐", "星座", "7_zodiac"),
-    ("📊", "洞察", "6_insight"),
+    ("💬 倾诉", "1_chat"),
+    ("🌳 树洞", "2_treehole"),
+    ("🌸 共鸣", "3_resonance"),
+    ("🎵 音乐", "4_music"),
+    ("🔮 MBTI", "5_mbti"),
+    ("⭐ 星座", "7_zodiac"),
+    ("📊 洞察", "6_insight"),
 ]
-nav_cols = st.columns(4)
-for idx, (icon, label, page) in enumerate(nav_items):
-    with nav_cols[idx % 4]:
-        st.page_link(
-            f"pages/{page}.py",
-            label=f"{icon}\n{label}",
-        )
-st.html('</div>')
+nav_labels = [f"{l}" for l, _ in nav_items]
+nav_target = st.pills(
+    label=" ",
+    options=nav_labels,
+    key="nav_pills",
+    label_visibility="collapsed",
+)
 
 # ═══════════════════════════════════════════════════════════
-#  💭 区块 3：12 情绪快速入口（3×4 网格）
+#  💭 区块 3：12 情绪快速入口 — st.pills multi
 # ═══════════════════════════════════════════════════════════
 st.html("""
 <div class="home-section">
     <div class="section-header">
         <span class="section-icon">💭</span>
         <span class="section-title-main">心里装着什么？</span>
-        <span class="section-title-sub">点一下，直接去对应的院落</span>
+        <span class="section-title-sub">点一下，自动去对应的院落</span>
     </div>
 </div>
 """)
 
-# 12 情绪（带 emoji）→ EMOTION_SCENE_MAP 自动跳到对应场景
 EMOTION_EMOJI = {
     "悲伤": "💧", "焦虑": "🌊", "愤怒": "🔥", "迷茫": "🌫️",
     "疲惫": "🍂", "孤独": "🌙", "平静": "🍃", "感恩": "🌸",
     "期待": "🌅", "执念": "⛓️", "委屈": "🌧️", "自卑": "🥀",
 }
-_entry_emotions = list(EMOTION_EMOJI.keys())  # 12 个
-
-st.html('<div class="home-emotion-grid">')
-# 4 列 × 3 行
-for i in range(0, len(_entry_emotions), 4):
-    emo_cols = st.columns(4)
-    for j in range(4):
-        if i + j < len(_entry_emotions):
-            emo = _entry_emotions[i + j]
-            with emo_cols[j]:
-                icon = EMOTION_EMOJI[emo]
-                if st.button(
-                    f"{icon}\n{emo}",
-                    key=f"emo_pick_{emo}",
-                    use_container_width=True,
-                ):
-                    st.session_state.selected_emotion = emo
-                    if emo in EMOTION_SCENE_MAP:
-                        rec = EMOTION_SCENE_MAP[emo]
-                        st.session_state.current_scene = rec["scene"]
-                        scene_info = SCENE_MAP.get(rec["scene"], {})
-                        st.session_state.chat_character = scene_info.get("char", "贾宝玉")
-                    st.session_state.chat_history = []
-                    st.switch_page("pages/1_chat.py")
-st.html('</div>')
+emotion_labels = [f"{EMOTION_EMOJI[k]} {k}" for k in EMOTION_EMOJI.keys()]
+selected_emotion_label = st.pills(
+    label=" ",
+    options=emotion_labels,
+    key="emotion_pills",
+    label_visibility="collapsed",
+)
 
 # ═══════════════════════════════════════════════════════════
-#  🏯 区块 4：9 大院落（2 列网格）
+#  处理 nav / emotion 选中：跳转到对应 page
+# ═══════════════════════════════════════════════════════════
+if nav_target:
+    # 找到对应 page
+    for label, page in nav_items:
+        if label == nav_target:
+            # 树洞/共鸣等页有自己的初始化逻辑，这里只切页面
+            if page == "2_treehole":
+                st.session_state.current_scene = "潇湘馆"
+                st.session_state.chat_character = "林黛玉"
+                st.session_state.chat_history = []
+            elif page == "1_chat":
+                st.session_state.current_scene = "怡红院"
+                st.session_state.chat_character = "贾宝玉"
+                st.session_state.chat_history = []
+            st.switch_page(f"pages/{page}.py")
+            break
+
+if selected_emotion_label:
+    # 解析出情绪中文名（去掉 emoji 前缀）
+    emo = selected_emotion_label.split(" ", 1)[1] if " " in selected_emotion_label else selected_emotion_label
+    st.session_state.selected_emotion = emo
+    if emo in EMOTION_SCENE_MAP:
+        rec = EMOTION_SCENE_MAP[emo]
+        st.session_state.current_scene = rec["scene"]
+        scene_info = SCENE_MAP.get(rec["scene"], {})
+        st.session_state.chat_character = scene_info.get("char", "贾宝玉")
+    st.session_state.chat_history = []
+    st.switch_page("pages/1_chat.py")
+
+# ═══════════════════════════════════════════════════════════
+#  🏯 区块 4：9 大院落 — st.pills（mobile-native，inline 元素）
 # ═══════════════════════════════════════════════════════════
 st.html("""
 <div class="home-section">
@@ -140,21 +151,23 @@ st.html("""
 </div>
 """)
 
-st.html('<div class="home-scene-grid">')
-for i in range(0, len(SCENES), 2):
-    scene_cols = st.columns(2)
-    for j, scene in enumerate(SCENES[i:i+2]):
-        with scene_cols[j]:
-            if st.button(
-                f"{scene['icon']}  {scene['name']}\n{scene['mood']} · {scene['char']}",
-                key=f"enter_{scene['name']}",
-                use_container_width=True,
-            ):
-                st.session_state.current_scene = scene["name"]
-                st.session_state.chat_character = scene["char"]
-                st.session_state.chat_history = []
-                st.switch_page("pages/1_chat.py")
-st.html('</div>')
+scene_labels = [f"{s['icon']} {s['name']}" for s in SCENES]
+selected_scene_label = st.pills(
+    label=" ",
+    options=scene_labels,
+    key="scene_pills",
+    label_visibility="collapsed",
+)
+
+if selected_scene_label:
+    # 匹配选中的场景
+    for s in SCENES:
+        if selected_scene_label == f"{s['icon']} {s['name']}":
+            st.session_state.current_scene = s["name"]
+            st.session_state.chat_character = s["char"]
+            st.session_state.chat_history = []
+            st.switch_page("pages/1_chat.py")
+            break
 
 # ═══════════════════════════════════════════════════════════
 #  🌸 区块 5：今日一签（每日一张红楼梦人物签）
