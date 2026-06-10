@@ -53,7 +53,7 @@ def chat(
             api_messages.append({"role": mapped_role, "content": content})
 
     headers = {
-        "Authorization": f"Bearer {MINIMAX_API_KEY}",
+        "Authorization": f"Bearer {AMAX_API_KEY}",
         "Content-Type": "application/json",
     }
 
