@@ -11,7 +11,8 @@ from core.minimax_chat import chat
 from core.characters import get_character
 from core.emotion_detector import detect_emotion, compute_session_emotion_profile
 from core.fl_engine import submit_local_stats
-from core.config import MOCK_MODE, SCENE_MAP
+from core.config import SCENE_MAP
+from core.minimax_chat import MOCK_MODE
 
 # 自伤关键词（独立于情绪检测，必须100%命中）
 SELF_HARM_PATTERN = re.compile(
