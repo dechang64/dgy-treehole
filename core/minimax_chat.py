@@ -17,8 +17,11 @@ MOCK_MODE = not AMAX_API_KEY
 DEFAULT_MODEL = AMAX_CHAT_MODEL
 
 # AMAX 路由支持的模型名候选（按优先级尝试）
+# 注: 2026-06-10 用户反馈 AMAX 可不指定 model,让路由自己选最优
+# 所以默认 model=None, 走 AMAX 智能路由
 AMAX_MODEL_CANDIDATES = [
     AMAX_CHAT_MODEL,                # 用户指定的（默认 deepseek-v3）
+    None,                            # 不指定 model（让 AMAX 智能路由）
     "deepseek-chat",                 # 备用 1
     "DeepSeek-V3",                   # 备用 2
     "gpt-4o-mini",                   # 备用 3（最稳）
@@ -69,16 +72,17 @@ def chat(
 
     url = f"{AMAX_BASE_URL}/v1/chat/completions"
 
-    # 多个模型名候选轮询（AMAX 不同模型名格式可能不同）
+    # 多个模型名候选轮询（AMAX 不同模型名格式可能不同；None=不指定 model, 让 AMAX 智能路由）
     last_error = None
     for model_name in AMAX_MODEL_CANDIDATES:
         payload = {
-            "model": model_name,
             "messages": api_messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stream": False,
         }
+        if model_name is not None:
+            payload["model"] = model_name
         try:
             resp = requests.post(url, headers=headers, json=payload, timeout=30)
             resp.raise_for_status()
@@ -89,7 +93,7 @@ def chat(
             status_code = base_resp.get("status_code", 0) if base_resp else 0
             if status_code != 0:
                 status_msg = base_resp.get("status_msg", "")
-                logger.error(f"AMAX API error: {status_code} - {status_msg} (model={model_name})")
+                logger.error(f"AMAX API error: {status_code} - {status_msg} (model={model_name or 'AUTO'})")
 
                 if status_code in (1004, 1000, 1001, 1002):
                     # key 问题 — 直接放弃,不走 fallback 列表
@@ -108,7 +112,7 @@ def chat(
                     return content
 
             # 没有 choices — 也可能 model 不对,继续试
-            logger.warning(f"AMAX model '{model_name}' returned empty choices. Trying next...")
+            logger.warning(f"AMAX model '{model_name or 'AUTO'}' returned empty choices. Trying next...")
             last_error = "empty choices"
             continue
 
