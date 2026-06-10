@@ -17,15 +17,15 @@ MOCK_MODE = not AMAX_API_KEY
 DEFAULT_MODEL = AMAX_CHAT_MODEL
 
 # AMAX 路由支持的模型名候选（按优先级尝试）
-# 注: 2026-06-10 用户反馈 AMAX 可不指定 model,让路由自己选最优
-# 实测:有时 None 智能路由成功,有时失败(路由到不可用模型);
-#      偶尔也需要显式 model 名字。
-# 所以保持多候选,但 None 放最前。
+# 注: 2026-06-10 官方文档示例（https://ai.amaxsmp.com 主页）显示
+#     应使用 model="amax-router" — 这是 AMAX 智能路由器名,
+#     它会按成本/质量自动选择下游模型。
+# 之前的 None / deepseek-v3 / gpt-4o-mini 等都是错的,AMAX 会忽略
+# (或者偶尔侥幸能路由到默认模型)。
 AMAX_MODEL_CANDIDATES = [
-    None,                            # 不指定 model（让 AMAX 智能路由）
-    "deepseek-v3",                   # 显式指定
-    "deepseek-chat",
-    "DeepSeek-V3",
+    "amax-router",                   # 官方推荐：智能路由到最优下游模型
+    None,                            # 不指定 model（AMAX 内部可能 fallback 到 amax-router）
+    "deepseek-v3",                   # 显式指定（可能不通）
     "gpt-4o-mini",
     "gpt-3.5-turbo",
 ]
