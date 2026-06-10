@@ -738,6 +738,191 @@ CSS = """<style>
     min-height: 0 !important;
     height: auto !important;
 }
+
+/* ── 首页 v2 重排：区块 + 区块标题 + 卡片统一 ── */
+
+/* 区块：垂直间距统一 */
+.home-section {
+    margin: 1.2rem 0 0.4rem;
+}
+.home-section + .home-section {
+    margin-top: 1.6rem;
+}
+
+/* 区块标题：图标 + 主标 + 副标 */
+.section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0.6rem 0 0.6rem;
+    padding-left: 0.2rem;
+    border-left: 3px solid #b8860b;
+    line-height: 1.2;
+}
+.section-header .section-icon { font-size: 1.2rem; }
+.section-header .section-title-main {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2c1810;
+    letter-spacing: 0.05rem;
+}
+.section-header .section-title-sub {
+    font-size: 0.75rem;
+    color: #8b7355;
+    margin-left: 0.2rem;
+}
+
+/* 7 个 nav 按钮：st.columns 强制多列 */
+.home-nav-grid [data-testid="stPageLink-NavLink"] {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.25rem !important;
+    background: #fff !important;
+    color: #2c1810 !important;
+    border: 1px solid #e8dfd0 !important;
+    border-radius: 14px !important;
+    padding: 0.9rem 0.4rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    transition: all 0.2s !important;
+    min-height: 80px !important;
+    box-shadow: 0 1px 3px rgba(44,24,16,0.04) !important;
+}
+.home-nav-grid [data-testid="stPageLink-NavLink"]:hover {
+    background: linear-gradient(135deg, #f5f0e8, #e8dfd0) !important;
+    border-color: #b8860b !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(184,134,11,0.15) !important;
+}
+.home-nav-grid [data-testid="stPageLink-NavLink"] span {
+    font-size: 1.6rem !important;
+    line-height: 1 !important;
+}
+
+/* 9 场景按钮：st.columns(2) 强制 2 列，st.button 占满 cell */
+.home-scene-grid [data-testid="stButton"] button {
+    background: linear-gradient(135deg, #f5f0e8, #e8dfd0) !important;
+    color: #2c1810 !important;
+    border: 1px solid #d4c5a9 !important;
+    border-radius: 12px !important;
+    padding: 0.8rem 0.6rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+    min-height: 64px !important;
+    height: auto !important;
+    white-space: pre-line !important;
+    line-height: 1.4 !important;
+    transition: all 0.2s !important;
+}
+.home-scene-grid [data-testid="stButton"] button:hover {
+    background: linear-gradient(135deg, #d4a574, #b8860b) !important;
+    color: #fff !important;
+    border-color: #b8860b !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 12 情绪按钮：3×4 网格 + emoji */
+.home-emotion-grid [data-testid="stButton"] button {
+    background: #fff !important;
+    color: #2c1810 !important;
+    border: 1px solid #e8dfd0 !important;
+    border-radius: 12px !important;
+    padding: 0.6rem 0.3rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    min-height: 52px !important;
+    height: auto !important;
+    transition: all 0.2s !important;
+}
+.home-emotion-grid [data-testid="stButton"] button:hover {
+    background: linear-gradient(135deg, #b8860b, #d4a574) !important;
+    color: #fff !important;
+    border-color: #b8860b !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(184,134,11,0.2) !important;
+}
+
+/* hero 大区块 */
+.home-hero {
+    background: linear-gradient(135deg, #2c1810 0%, #4a2c1a 50%, #3d1f0e 100%);
+    color: #f5f0e8;
+    padding: 1.6rem 1.2rem 1.4rem;
+    text-align: center;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(44,24,16,0.18);
+}
+.home-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 60% 40% at 30% 30%, rgba(184,134,11,0.18), transparent 60%),
+        radial-gradient(ellipse 50% 30% at 70% 80%, rgba(192,57,43,0.12), transparent 60%);
+    pointer-events: none;
+}
+.home-hero > * { position: relative; }
+.home-hero .hero-eyebrow {
+    font-size: 0.7rem;
+    color: #d4a574;
+    letter-spacing: 0.3rem;
+    margin-bottom: 0.4rem;
+    opacity: 0.85;
+}
+.home-hero .hero-title {
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5rem;
+    margin: 0.2rem 0 0.4rem;
+    color: #f5f0e8;
+}
+.home-hero .hero-sub {
+    font-size: 0.85rem;
+    color: #d4c5a9;
+    opacity: 0.85;
+    margin: 0 0 0.8rem;
+    letter-spacing: 0.05rem;
+}
+.home-hero .hero-motto {
+    font-size: 0.78rem;
+    color: #b8860b;
+    font-style: italic;
+    opacity: 0.75;
+    margin: 0.6rem 0 0;
+    letter-spacing: 0.08rem;
+}
+
+/* CTA 主按钮：st.button primary */
+.home-hero [data-testid="baseButton-primary"],
+.home-hero button[kind="primary"] {
+    background: linear-gradient(135deg, #b8860b, #d4a574) !important;
+    color: #fff !important;
+    border: none !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    padding: 0.7rem 1.2rem !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 14px rgba(184,134,11,0.35) !important;
+}
+
+/* 底部信息 */
+.home-footer {
+    text-align: center;
+    padding: 1.5rem 0 0.5rem;
+    color: #8b7355;
+    font-size: 0.75rem;
+    line-height: 1.8;
+}
+.home-footer .footer-tag {
+    color: #b8860b;
+    font-size: 0.7rem;
+    letter-spacing: 0.05rem;
+}
 </style>"""
 
 import streamlit as st
