@@ -772,7 +772,25 @@ CSS = """<style>
     margin-left: 0.2rem;
 }
 
-/* 7 个 nav 按钮：st.columns 强制多列 */
+/* 7 个 nav：用 CSS Grid 强制多列（不依赖 st.columns，mobile/desktop 都干净） */
+.home-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin: 0.4rem 0 0.6rem;
+}
+@media (max-width: 480px) {
+    .home-nav-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.4rem;
+    }
+}
+@media (min-width: 769px) {
+    .home-nav-grid {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.4rem;
+    }
+}
 .home-nav-grid [data-testid="stPageLink-NavLink"] {
     display: flex !important;
     flex-direction: column !important;
@@ -782,13 +800,13 @@ CSS = """<style>
     background: #fff !important;
     color: #2c1810 !important;
     border: 1px solid #e8dfd0 !important;
-    border-radius: 14px !important;
-    padding: 0.9rem 0.4rem !important;
-    font-size: 0.85rem !important;
+    border-radius: 12px !important;
+    padding: 0.7rem 0.3rem !important;
+    font-size: 0.78rem !important;
     font-weight: 500 !important;
     text-decoration: none !important;
     transition: all 0.2s !important;
-    min-height: 80px !important;
+    min-height: 72px !important;
     box-shadow: 0 1px 3px rgba(44,24,16,0.04) !important;
 }
 .home-nav-grid [data-testid="stPageLink-NavLink"]:hover {
@@ -798,21 +816,33 @@ CSS = """<style>
     box-shadow: 0 6px 16px rgba(184,134,11,0.15) !important;
 }
 .home-nav-grid [data-testid="stPageLink-NavLink"] span {
-    font-size: 1.6rem !important;
+    font-size: 1.4rem !important;
     line-height: 1 !important;
 }
 
-/* 9 场景按钮：st.columns(2) 强制 2 列，st.button 占满 cell */
+/* 9 场景按钮：CSS Grid 2 列，mobile 1 列 */
+.home-scene-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin: 0.4rem 0 0.4rem;
+}
+@media (max-width: 480px) {
+    .home-scene-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+}
 .home-scene-grid [data-testid="stButton"] button {
     background: linear-gradient(135deg, #f5f0e8, #e8dfd0) !important;
     color: #2c1810 !important;
     border: 1px solid #d4c5a9 !important;
     border-radius: 12px !important;
-    padding: 0.8rem 0.6rem !important;
-    font-size: 0.88rem !important;
+    padding: 0.7rem 0.5rem !important;
+    font-size: 0.8rem !important;
     font-weight: 600 !important;
     text-align: left !important;
-    min-height: 64px !important;
+    min-height: 56px !important;
     height: auto !important;
     white-space: pre-line !important;
     line-height: 1.4 !important;
@@ -825,18 +855,32 @@ CSS = """<style>
     transform: translateY(-1px) !important;
 }
 
-/* 12 情绪按钮：3×4 网格 + emoji */
+/* 12 情绪按钮：CSS Grid 4×3（mobile 也保持 4 列） */
+.home-emotion-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+    margin: 0.4rem 0 0.4rem;
+}
+@media (max-width: 380px) {
+    .home-emotion-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.3rem;
+    }
+}
 .home-emotion-grid [data-testid="stButton"] button {
     background: #fff !important;
     color: #2c1810 !important;
     border: 1px solid #e8dfd0 !important;
-    border-radius: 12px !important;
-    padding: 0.6rem 0.3rem !important;
-    font-size: 0.85rem !important;
+    border-radius: 10px !important;
+    padding: 0.5rem 0.2rem !important;
+    font-size: 0.78rem !important;
     font-weight: 500 !important;
-    min-height: 52px !important;
+    min-height: 48px !important;
     height: auto !important;
     transition: all 0.2s !important;
+    white-space: pre-line !important;
+    line-height: 1.3 !important;
 }
 .home-emotion-grid [data-testid="stButton"] button:hover {
     background: linear-gradient(135deg, #b8860b, #d4a574) !important;
