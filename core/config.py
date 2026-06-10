@@ -18,8 +18,9 @@ MINIMAX_BASE_URL = "https://api.minimaxi.com"
 
 # ── AMAX Token Router（OpenAI 兼容，单 key 调度 50+ LLM）──
 # 2026-06-10: 切到 AMAX 路由（用户已有 key，MiniMax key 全失效）
+# 官方域名: https://ai.amaxsmp.com (用户提供)
 AMAX_API_KEY = os.environ.get("AMAX_API_KEY", "")
-AMAX_BASE_URL = "https://api.amaxapi.com"
+AMAX_BASE_URL = "https://ai.amaxsmp.com"
 AMAX_CHAT_MODEL = os.environ.get("AMAX_CHAT_MODEL", "deepseek-v3")  # 便宜、中文好
 
 # ── 模型 ──
