@@ -1,11 +1,12 @@
 """AMAX Token Router 聊天客户端（OpenAI 兼容格式）
 
-API: POST https://api.amaxapi.com/v1/chat/completions
+API: POST https://ai.amaxsmp.com/v1/chat/completions
 Model: deepseek-v3 (默认) / gpt-4o-mini / glm-4-flash / claude-3-5-haiku ...
 
 2026-06-10: 切换到 AMAX Token Router（MiniMax key 全失效后的回退方案）
 """
 import requests
+import json
 import logging
 from core.config import AMAX_API_KEY, AMAX_BASE_URL, AMAX_CHAT_MODEL
 
@@ -14,6 +15,15 @@ logger = logging.getLogger(__name__)
 # 配置
 MOCK_MODE = not AMAX_API_KEY
 DEFAULT_MODEL = AMAX_CHAT_MODEL
+
+# AMAX 路由支持的模型名候选（按优先级尝试）
+AMAX_MODEL_CANDIDATES = [
+    AMAX_CHAT_MODEL,                # 用户指定的（默认 deepseek-v3）
+    "deepseek-chat",                 # 备用 1
+    "DeepSeek-V3",                   # 备用 2
+    "gpt-4o-mini",                   # 备用 3（最稳）
+    "gpt-3.5-turbo",                 # 备用 4
+]
 
 
 def chat(
@@ -57,69 +67,73 @@ def chat(
         "Content-Type": "application/json",
     }
 
-    # AMAX: OpenAI 兼容 /v1/chat/completions
-    payload = {
-        "model": DEFAULT_MODEL,
-        "messages": api_messages,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-        "stream": False,
-    }
-
     url = f"{AMAX_BASE_URL}/v1/chat/completions"
 
-    try:
-        resp = requests.post(url, headers=headers, json=payload, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
+    # 多个模型名候选轮询（AMAX 不同模型名格式可能不同）
+    last_error = None
+    for model_name in AMAX_MODEL_CANDIDATES:
+        payload = {
+            "model": model_name,
+            "messages": api_messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": False,
+        }
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
 
-        # AMAX (OpenAI 兼容) — 业务错误也走 base_resp（如果路由有包装）
-        base_resp = data.get("base_resp", {})
-        status_code = base_resp.get("status_code", 0) if base_resp else 0
-        if status_code != 0:
-            status_msg = base_resp.get("status_msg", "")
-            logger.error(f"AMAX API error: {status_code} - {status_msg}")
+            # AMAX (OpenAI 兼容) — 业务错误也走 base_resp（如果路由有包装）
+            base_resp = data.get("base_resp", {})
+            status_code = base_resp.get("status_code", 0) if base_resp else 0
+            if status_code != 0:
+                status_msg = base_resp.get("status_msg", "")
+                logger.error(f"AMAX API error: {status_code} - {status_msg} (model={model_name})")
 
-            if status_code in (1004, 1000, 1001, 1002):
-                logger.warning(f"AMAX key issue ({status_code}), falling back to mock for this turn")
+                if status_code in (1004, 1000, 1001, 1002):
+                    # key 问题 — 直接放弃,不走 fallback 列表
+                    mock = _mock_response(character, messages, personality_params)
+                    return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
+
+                last_error = f"{status_code} - {status_msg}"
+                continue  # 试下一个模型
+
+            # 检查 choices
+            choices = data.get("choices", [])
+            if choices:
+                msg = choices[0].get("message", {})
+                content = msg.get("content", "").strip()
+                if content:
+                    return content
+
+            # 没有 choices — 也可能 model 不对,继续试
+            logger.warning(f"AMAX model '{model_name}' returned empty choices. Trying next...")
+            last_error = "empty choices"
+            continue
+
+        except requests.exceptions.HTTPError as e:
+            code = e.response.status_code if e.response else 0
+            logger.error(f"AMAX HTTP {code} for model '{model_name}': {e.response.text[:200] if e.response else ''}")
+            # 401/403 是 key 错,放弃
+            if code in (401, 403):
                 mock = _mock_response(character, messages, personality_params)
                 return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
+            # 400/404 是 model 名错,试下一个
+            if code in (400, 404):
+                last_error = f"HTTP {code}"
+                continue
+            # 其他错误
+            last_error = f"HTTP {code}"
+            continue
+        except Exception as e:
+            logger.error(f"AMAX exception for model '{model_name}': {type(e).__name__}: {e}")
+            last_error = str(e)
+            continue
 
-            return f"（服务暂时不可用，错误：{status_code}）"
-
-        # 解析回复 — AMAX OpenAI 兼容格式
-        choices = data.get("choices", [])
-        if choices:
-            msg = choices[0].get("message", {})
-            content = msg.get("content", "").strip()
-            if content:
-                return content
-
-        # 兜底
-        logger.error(f"AMAX empty response: {data}")
-        return "（AI 这次没说话,可能网络抖动,再试一次？）"
-
-    except requests.exceptions.Timeout:
-        return "（网络超时，请稍后再试。）"
-    except requests.exceptions.HTTPError as e:
-        code = e.response.status_code if e.response else 0
-        body = e.response.text if e.response else ''
-        logger.error(f"AMAX HTTP error: {code} - {body[:200]}")
-        if code == 429:
-            return "（请求太频繁了，请稍等片刻再试。）"
-        if code in (401, 403):
-            mock = _mock_response(character, messages, personality_params)
-            return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
-        return f"（服务暂时不可用，错误：{code}）"
-    except requests.exceptions.ConnectionError as e:
-        # Cloud 连不上 AMAX（DNS/网络/被墙）→ mock 兜底
-        logger.error(f"AMAX connection error: {e}")
-        mock = _mock_response(character, messages, personality_params)
-        return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
-    except Exception as e:
-        logger.error(f"AMAX unexpected error: {type(e).__name__}: {e}")
-        mock = _mock_response(character, messages, personality_params)
-        return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
+    # 所有模型都失败
+    mock = _mock_response(character, messages, personality_params)
+    return f"💭 *（AI 暂未连接,试了 {len(AMAX_MODEL_CANDIDATES)} 个模型都不行:{last_error}）*\n\n{mock}"
 
 
 def _mock_response(character: str, messages: list[dict], personality_params: dict | None = None) -> str:
