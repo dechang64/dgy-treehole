@@ -1,19 +1,19 @@
-"""MiniMax 聊天客户端（Token Plan 用户专用）
+"""AMAX Token Router 聊天客户端（OpenAI 兼容格式）
 
-API: POST https://api.minimaxi.com/v1/text/chatcompletion_v2
-Model: abab5.5-chat（Token Plan 标配）/ MiniMax-Text-01
+API: POST https://api.amaxapi.com/v1/chat/completions
+Model: deepseek-v3 (默认) / gpt-4o-mini / glm-4-flash / claude-3-5-haiku ...
 
-替换旧的 GLM (智谱 AI) 客户端。
+2026-06-10: 切换到 AMAX Token Router（MiniMax key 全失效后的回退方案）
 """
 import requests
 import logging
-from core.config import MINIMAX_API_KEY, MINIMAX_BASE_URL
+from core.config import AMAX_API_KEY, AMAX_BASE_URL, AMAX_CHAT_MODEL
 
 logger = logging.getLogger(__name__)
 
 # 配置
-MOCK_MODE = not MINIMAX_API_KEY
-DEFAULT_MODEL = "abab5.5-chat"
+MOCK_MODE = not AMAX_API_KEY
+DEFAULT_MODEL = AMAX_CHAT_MODEL
 
 
 def chat(
@@ -57,7 +57,7 @@ def chat(
         "Content-Type": "application/json",
     }
 
-    # MiniMax API: ?GroupId=xxx query param + 消息格式
+    # AMAX: OpenAI 兼容 /v1/chat/completions
     payload = {
         "model": DEFAULT_MODEL,
         "messages": api_messages,
@@ -66,46 +66,48 @@ def chat(
         "stream": False,
     }
 
-    url = f"{MINIMAX_BASE_URL}/v1/text/chatcompletion_v2?GroupId=default"
+    url = f"{AMAX_BASE_URL}/v1/chat/completions"
 
     try:
         resp = requests.post(url, headers=headers, json=payload, timeout=30)
         resp.raise_for_status()
         data = resp.json()
 
-        # 检查 MiniMax 业务状态码
+        # AMAX (OpenAI 兼容) — 业务错误也走 base_resp（如果路由有包装）
         base_resp = data.get("base_resp", {})
-        status_code = base_resp.get("status_code", 0)
+        status_code = base_resp.get("status_code", 0) if base_resp else 0
         if status_code != 0:
             status_msg = base_resp.get("status_msg", "")
-            logger.error(f"MiniMax API error: {status_code} - {status_msg}")
+            logger.error(f"AMAX API error: {status_code} - {status_msg}")
 
-            # 鉴权失败 / 配额耗尽 → key 失效，回退到 mock 模式（不影响用户使用）
             if status_code in (1004, 1000, 1001, 1002):
-                logger.warning(f"MiniMax key issue ({status_code}), falling back to mock for this turn")
+                logger.warning(f"AMAX key issue ({status_code}), falling back to mock for this turn")
                 mock = _mock_response(character, messages, personality_params)
                 return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
 
             return f"（服务暂时不可用，错误：{status_code}）"
 
-        # 解析回复 — chatcompletion_v2 返回 OpenAI 兼容格式
+        # 解析回复 — AMAX OpenAI 兼容格式
         choices = data.get("choices", [])
         if choices:
             msg = choices[0].get("message", {})
-            return msg.get("content", "").strip()
+            content = msg.get("content", "").strip()
+            if content:
+                return content
 
-        # 兜底：老格式 reply 字段
-        return data.get("reply", "").strip()
+        # 兜底
+        logger.error(f"AMAX empty response: {data}")
+        return "（AI 这次没说话,可能网络抖动,再试一次？）"
 
     except requests.exceptions.Timeout:
         return "（网络超时，请稍后再试。）"
     except requests.exceptions.HTTPError as e:
         code = e.response.status_code if e.response else 0
-        logger.error(f"MiniMax HTTP error: {code} - {e.response.text if e.response else ''}")
+        body = e.response.text if e.response else ''
+        logger.error(f"AMAX HTTP error: {code} - {body[:200]}")
         if code == 429:
             return "（请求太频繁了，请稍等片刻再试。）"
         if code in (401, 403):
-            # HTTP-level 鉴权失败 → 同样回退到 mock
             mock = _mock_response(character, messages, personality_params)
             return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
         return f"（服务暂时不可用，错误：{code}）"
