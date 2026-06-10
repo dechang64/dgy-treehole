@@ -10,8 +10,10 @@ import os
 GLM_API_KEY = os.environ.get("GLM_API_KEY", "")
 GLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
 
-# ── MiniMax API（仅用于音乐生成，可选）──
+# ── MiniMax API（Token Plan 全功能：一个 key 可同时用于 chat + music）──
 MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
+# 独立 music key（如果 chat key 没 music 权限，配此 fallback）—— 2026-06-09
+MINIMAX_MUSIC_API_KEY = os.environ.get("MINIMAX_MUSIC_API_KEY", "") or MINIMAX_API_KEY
 MINIMAX_BASE_URL = "https://api.minimaxi.com"
 
 # ── 模型 ──
