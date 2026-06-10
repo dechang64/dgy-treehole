@@ -77,7 +77,15 @@ def chat(
         base_resp = data.get("base_resp", {})
         status_code = base_resp.get("status_code", 0)
         if status_code != 0:
-            logger.error(f"MiniMax API error: {base_resp}")
+            status_msg = base_resp.get("status_msg", "")
+            logger.error(f"MiniMax API error: {status_code} - {status_msg}")
+
+            # 鉴权失败 / 配额耗尽 → key 失效，回退到 mock 模式（不影响用户使用）
+            if status_code in (1004, 1000, 1001, 1002):
+                logger.warning(f"MiniMax key issue ({status_code}), falling back to mock for this turn")
+                mock = _mock_response(character, messages, personality_params)
+                return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
+
             return f"（服务暂时不可用，错误：{status_code}）"
 
         # 解析回复 — chatcompletion_v2 返回 OpenAI 兼容格式
@@ -96,6 +104,10 @@ def chat(
         logger.error(f"MiniMax HTTP error: {code} - {e.response.text if e.response else ''}")
         if code == 429:
             return "（请求太频繁了，请稍等片刻再试。）"
+        if code in (401, 403):
+            # HTTP-level 鉴权失败 → 同样回退到 mock
+            mock = _mock_response(character, messages, personality_params)
+            return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
         return f"（服务暂时不可用，错误：{code}）"
     except Exception as e:
         logger.error(f"MiniMax unexpected error: {type(e).__name__}: {e}")
