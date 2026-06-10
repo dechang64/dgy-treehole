@@ -111,9 +111,15 @@ def chat(
             mock = _mock_response(character, messages, personality_params)
             return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
         return f"（服务暂时不可用，错误：{code}）"
+    except requests.exceptions.ConnectionError as e:
+        # Cloud 连不上 AMAX（DNS/网络/被墙）→ mock 兜底
+        logger.error(f"AMAX connection error: {e}")
+        mock = _mock_response(character, messages, personality_params)
+        return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
     except Exception as e:
-        logger.error(f"MiniMax unexpected error: {type(e).__name__}: {e}")
-        return "（出了点小问题，请稍后再试。）"
+        logger.error(f"AMAX unexpected error: {type(e).__name__}: {e}")
+        mock = _mock_response(character, messages, personality_params)
+        return f"💭 *（AI 暂未连接,先用温柔模板陪着你）*\n\n{mock}"
 
 
 def _mock_response(character: str, messages: list[dict], personality_params: dict | None = None) -> str:
