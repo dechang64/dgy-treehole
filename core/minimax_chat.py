@@ -18,14 +18,11 @@ DEFAULT_MODEL = AMAX_CHAT_MODEL
 
 # AMAX 路由支持的模型名候选（按优先级尝试）
 # 注: 2026-06-10 用户反馈 AMAX 可不指定 model,让路由自己选最优
-# 所以默认 model=None, 走 AMAX 智能路由
+# 实测:指定 deepseek-v3 / gpt-4o-mini 等具体模型名时,AMAX 返回空 choices;
+#      不指定 model 字段时,AMAX 智能路由正常工作。
+# 所以现在默认只发一个请求(model=None),既快又省。
 AMAX_MODEL_CANDIDATES = [
-    AMAX_CHAT_MODEL,                # 用户指定的（默认 deepseek-v3）
     None,                            # 不指定 model（让 AMAX 智能路由）
-    "deepseek-chat",                 # 备用 1
-    "DeepSeek-V3",                   # 备用 2
-    "gpt-4o-mini",                   # 备用 3（最稳）
-    "gpt-3.5-turbo",                 # 备用 4
 ]
 
 
