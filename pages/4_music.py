@@ -255,15 +255,44 @@ with col2:
         index=rec_mood_idx if has_context else 0,
     )
 
+# v6.4: 加 4 风格变体 (指南第 3 节)
+variant = st.selectbox(
+    "🎚 风格变体 (指南第 3 节)", MUSIC_VARIANTS,
+    index=0,
+    help="纯器乐: 删环境音 | 深度冥想: BPM 降 5-8 | 情绪疏导: BPM 升 3-5 | 静谧沉思: 降高频",
+)
+
+# v6.4: 显示场景的精确元数据 (BPM/调式/疗法)
+from core.scene_prompts import SCENE_META
+meta = SCENE_META.get(place, SCENE_META["潇湘馆"])
+st.html(f"""
+<div style="background: rgba(212, 165, 116, 0.08); border-left: 3px solid #d4a574;
+            border-radius: 8px; padding: 0.8rem 1rem; margin: 0.8rem 0;
+            font-size: 0.85rem; line-height: 1.7;">
+    <div style="color: #d4a574; font-weight: 600; margin-bottom: 4px;">
+        🎼 {meta['style']}
+    </div>
+    <div style="color: #8b7355;">
+        <strong>倾听者</strong>: {meta['listener']} ·
+        <strong>疗法</strong>: {meta['therapy']} ·
+        <strong>调式</strong>: {meta['mode']}<br>
+        <strong>BPM</strong>: {meta['bpm']} ({meta['tempo']}) ·
+        <strong>主奏</strong>: {', '.join(meta['instruments']['主奏'])}<br>
+        <strong>核心情绪</strong>: {meta['core_emotion']} ·
+        <strong>情绪维度</strong>: {'/'.join(meta['emotion_dimensions'])}
+    </div>
+</div>
+""")
+
 # ── 播放 ──
 audio_path = get_audio_file(place, mood)
-chinese_name = f"{place}_{mood}.mp3"
+chinese_name = f"{place}_{mood}_{variant}.mp3"
 
 st.markdown(f"""
 <div class="card" style="text-align:center;">
     <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎶</div>
-    <h3>{place} · {mood}</h3>
-    <p style="font-size: 0.8rem; color: #8b7355;">AI 专属生成</p>
+    <h3>{place} · {mood} · {variant}</h3>
+    <p style="font-size: 0.8rem; color: #8b7355;">v6.4 精确提示词 (300+ 字 9 要素)</p>
 </div>
 """, unsafe_allow_html=True)
 
