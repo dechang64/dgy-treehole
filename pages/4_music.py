@@ -262,7 +262,7 @@ chinese_name = f"{place}_{mood}.mp3"
 st.markdown(f"""
 <div class="card" style="text-align:center;">
     <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎶</div>
-    <h3>{place} · {mood} · {variant}</h3>
+    <h3>{place} · {mood}</h3>
     <p style="font-size: 0.8rem; color: #8b7355;">v6.4 精确提示词 (300+ 字 9 要素)</p>
 </div>
 """, unsafe_allow_html=True)
