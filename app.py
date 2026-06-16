@@ -18,11 +18,25 @@ st.set_page_config(
     page_title="大观园树洞",
     page_icon="🌸",
     layout="centered",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",  # 显示中文 sidebar
 )
 
 # ── 注入全局 CSS（在 set_page_config 之后）──
 inject_css()
+
+# ── 中文 sidebar nav (覆盖 streamlit 默认英文文件名) ──
+with st.sidebar:
+    st.markdown("### 🌸 心灯 · 大观园")
+    st.page_link("app.py", label="🏠 主页")
+    st.page_link("pages/1_chat.py", label="💬 倾诉")
+    st.page_link("pages/2_treehole.py", label="🌳 树洞")
+    st.page_link("pages/3_resonance.py", label="🌸 共鸣")
+    st.page_link("pages/4_music.py", label="🎵 音乐")
+    st.page_link("pages/5_mbti.py", label="🔮 MBTI 人格")
+    st.page_link("pages/6_insight.py", label="📊 洞察")
+    st.page_link("pages/7_zodiac.py", label="⭐ 星图")
+    st.markdown("---")
+    st.caption("v6.4 音乐精确提示词")
 
 # ═══════════════════════════════════════════════════════════
 #  🎬 区块 1：Hero（沉浸式开场 + 1 个核心 CTA）
@@ -69,8 +83,8 @@ nav_items = [
     ("🌳 树洞", "2_treehole"),
     ("🌸 共鸣", "3_resonance"),
     ("🎵 音乐", "4_music"),
-    ("🔮 MBTI", "5_mbti"),
-    ("⭐ 星座", "7_zodiac"),
+    ("🔮 MBTI 人格", "5_mbti"),
+    ("⭐ 星图", "7_zodiac"),
     ("📊 洞察", "6_insight"),
 ]
 nav_labels = [f"{l}" for l, _ in nav_items]
@@ -115,7 +129,7 @@ if nav_target:
     for label, page in nav_items:
         if label == nav_target:
             # 树洞/共鸣等页有自己的初始化逻辑，这里只切页面
-            if page == "2_treehole":
+            if page == "2_树洞":
                 st.session_state.current_scene = "潇湘馆"
                 st.session_state.chat_character = "林黛玉"
                 st.session_state.chat_history = []
