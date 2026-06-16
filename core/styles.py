@@ -11,10 +11,14 @@ CSS = """<style>
 /* 卡片样式 */
 .card {
     background: #f5f0e8;
+    color: #2c1810;  /* 深棕文字, 配米色背景 (之前漏设, 默认米白色看不见) */
     border-radius: 12px;
     padding: 1.2rem;
     margin: 0.8rem 0;
     border: 1px solid #e8dfd0;
+}
+.card h3, .card h1, .card h2, .card p {
+    color: #2c1810 !important;  /* 卡片内文字强制深色 */
 }
 .card-dark {
     background: #2c1810;
