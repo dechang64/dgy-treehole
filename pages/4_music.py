@@ -12,10 +12,11 @@ import streamlit as st
 import requests
 import tempfile
 from core.config import (
-    MUSIC_PLACES, MUSIC_MOODS, MBTI_PARAMS, ELEM_PARAMS,
+    MUSIC_PLACES, MUSIC_MOODS, MUSIC_VARIANTS, MBTI_PARAMS, ELEM_PARAMS,
     EMOTION_MUSIC_MAP, MUSIC_MOOD_MUSIC_MAP,
 )
 from core.emotion_detector import compute_session_emotion_profile
+from core.scene_prompts import SCENE_META
 
 st.set_page_config(page_title="疗愈音乐 · 大观园树洞", page_icon="🎵", layout="centered")
 from core.styles import inject_css; inject_css()
@@ -262,8 +263,7 @@ variant = st.selectbox(
     help="纯器乐: 删环境音 | 深度冥想: BPM 降 5-8 | 情绪疏导: BPM 升 3-5 | 静谧沉思: 降高频",
 )
 
-# v6.4: 显示场景的精确元数据 (BPM/调式/疗法)
-from core.scene_prompts import SCENE_META
+# v6.4: 显示场景的精确元数据 (BPM/调式/疗法) — SCENE_META 顶部 import
 meta = SCENE_META.get(place, SCENE_META["潇湘馆"])
 st.html(f"""
 <div style="background: rgba(212, 165, 116, 0.08); border-left: 3px solid #d4a574;
