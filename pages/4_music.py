@@ -21,12 +21,12 @@ from core.emotion_detector import compute_session_emotion_profile
 st.set_page_config(page_title="疗愈音乐 · 大观园树洞", page_icon="🎵", layout="centered")
 from core.styles import inject_css; inject_css()
 
-# GitHub Release — Release API 实际资产名 = 中文 (从 release page 抓取的 sha256 list 看)
-# 例: 蘅芜苑_沉思.mp3, 稻香村_沉思.mp3, 藕香榭_沉思.mp3 ...
+# GitHub Release v1.0-music — ASCII 资产名 (从 release API 抓的)
+# 例: hengwuyuan_chensi.mp3, daoxiangcun_chensi.mp3, ouxiangxie_chensi.mp3
 RELEASE_BASE = "https://github.com/dechang64/dgy-treehole/releases/download/v1.0-music"
 
-# v2 fallback — raw GitHub (mp3 直接 commit 进 repo, 缺失/太短 10 段)
-# 命名规则: {scene_ascii}_{mood_ascii}_v2.mp3
+# v2 fallback — raw GitHub (mp3 直接 commit 进 repo, 10 段 v1 太短/缺失的备选)
+# 命名规则: {scene_ascii}_{mood_ascii}_v2.mp3 (ouxxiangxie 双 x, 跟 git 一致)
 RAW_V2_BASE = "https://raw.githubusercontent.com/dechang64/dgy-treehole/main/data/mp3_v2"
 
 FILENAME_MAP = {
@@ -173,14 +173,15 @@ def get_audio_file(place: str, mood: str) -> str | None:
     3. v1 名 = {place}_{mood}.mp3 (中文), v2 名 = {ascii}_{ascii}_v2.mp3
     """
     chinese_name = f"{place}_{mood}.mp3"
+    # FILENAME_MAP 直接给 ASCII (v1 真实拼写, e.g. ouxiangxie_chensi.mp3)
+    asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
 
-    # 1. 尝试 v1 release (中文名, 36 段全有)
-    url_v1 = f"{RELEASE_BASE}/{quote(chinese_name)}"
+    # 1. 尝试 v1 release (ASCII, 36 段全有)
+    url_v1 = f"{RELEASE_BASE}/{asset_name}"
     if _try_fetch_to_tmp(url_v1, place, mood):
         return _last_tmp_path
-    # 2. fallback v2 (raw GitHub, ASCII 名)
-    ascii_name = FILENAME_MAP.get(chinese_name, chinese_name)
-    v2_name = ascii_name.replace(".mp3", "_v2.mp3")
+    # 2. fallback v2 (raw GitHub, ASCII + _v2 后缀, e.g. ouxxiangxie_chensi_v2.mp3)
+    v2_name = asset_name.replace(".mp3", "_v2.mp3")
     url_v2 = f"{RAW_V2_BASE}/{v2_name}"
     if _try_fetch_to_tmp(url_v2, place, mood):
         return _last_tmp_path
