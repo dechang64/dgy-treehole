@@ -23,6 +23,10 @@ from core.styles import inject_css; inject_css()
 # GitHub Release — Release API 不支持中文字符名，用 ASCII 资源名
 RELEASE_BASE = "https://github.com/dechang64/dgy-treehole/releases/download/v1.0-music"
 
+# v2 fallback — raw GitHub (mp3 直接 commit 进 repo, 缺失/太短 10 段)
+# 命名规则: {scene_ascii}_{mood_ascii}_v2.mp3
+RAW_V2_BASE = "https://raw.githubusercontent.com/dechang64/dgy-treehole/main/data/mp3_v2"
+
 FILENAME_MAP = {
     "潇湘馆_宁静.mp3": "xiaoxiangguan_ningjing.mp3",
     "潇湘馆_思念.mp3": "xiaoxiangguan_sinian.mp3",
@@ -160,10 +164,34 @@ def get_audio_file(place: str, mood: str) -> str | None:
     注意：不能用 @st.cache_data —— 临时文件路径在 Streamlit Cloud
     多 worker 环境下无法跨用户共享，且文件随时会被 GC 清理。
     改为每次重新下载，mp3 普遍 < 1MB，用户冷流 < 5s。
+
+    v6.4.4 策略:
+    1. 优先 GitHub Release v1.0-music (v1 资源)
+    2. v1 404 时, 自动回退 raw GitHub v2 (10 段新生成, commit 进 repo)
+    3. 命名: {scene_ascii}_{mood_ascii}_v2.mp3
     """
     chinese_name = f"{place}_{mood}.mp3"
     asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
-    url = f"{RELEASE_BASE}/{asset_name}"
+
+    # 1. 尝试 v1 release
+    url_v1 = f"{RELEASE_BASE}/{asset_name}"
+    if _try_fetch_to_tmp(url_v1, place, mood):
+        return _last_tmp_path
+    # 2. fallback v2 (raw GitHub)
+    v2_name = asset_name.replace(".mp3", "_v2.mp3")
+    url_v2 = f"{RAW_V2_BASE}/{v2_name}"
+    if _try_fetch_to_tmp(url_v2, place, mood):
+        return _last_tmp_path
+    st.error(f"加载音乐失败: v1 v2 都不可用 ({place}_{mood})")
+    return None
+
+
+_last_tmp_path: str | None = None
+
+
+def _try_fetch_to_tmp(url: str, place: str, mood: str) -> bool:
+    """下载到临时文件, 成功返回 True 并存 _last_tmp_path, 失败返回 False"""
+    global _last_tmp_path
     try:
         resp = requests.get(url, timeout=60, stream=True)
         resp.raise_for_status()
@@ -173,10 +201,10 @@ def get_audio_file(place: str, mood: str) -> str | None:
         for chunk in resp.iter_content(chunk_size=65536):
             tmp.write(chunk)
         tmp.close()
-        return tmp.name
-    except Exception as e:
-        st.error(f"加载音乐失败: {e}")
-        return None
+        _last_tmp_path = tmp.name
+        return True
+    except Exception:
+        return False
 
 
 # ═══════════════════════════════════════════════════════════
