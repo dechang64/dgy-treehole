@@ -10,7 +10,6 @@
 """
 import streamlit as st
 import requests
-import tempfile
 from core.config import (
     MUSIC_PLACES, MUSIC_MOODS, MBTI_PARAMS, ELEM_PARAMS,
     EMOTION_MUSIC_MAP, MUSIC_MOOD_MUSIC_MAP,
@@ -159,52 +158,34 @@ def get_smart_recommendation():
 #  音频下载（复用之前逻辑）
 # ═══════════════════════════════════════════════════════════
 
-def get_audio_file(place: str, mood: str) -> str | None:
-    """下载音乐文件并返回本地路径。
+def get_audio_url(place: str, mood: str) -> str | None:
+    """返回 mp3 的可访问 URL (浏览器直下, 跳过 streamlit cloud 代理).
 
-    注意：不能用 @st.cache_data —— 临时文件路径在 Streamlit Cloud
-    多 worker 环境下无法跨用户共享，且文件随时会被 GC 清理。
-    改为每次重新下载，mp3 普遍 < 1MB，用户冷流 < 5s。
-
-    v6.4.4 策略:
-    1. 优先 GitHub Release v1.0-music (36 段全有, 中文名)
-    2. v1 404 时, 自动回退 raw GitHub v2 (10 段新生成, commit 进 repo, ASCII 名)
-    3. v1 名 = {place}_{mood}.mp3 (中文), v2 名 = {ascii}_{ascii}_v2.mp3
+    v6.4.7 策略: 不用 tempfile 也不用 streamlit media proxy, 直接返回 URL.
+    - 优先 v1 release (GitHub Releases CDN, 36 段全有)
+    - fallback raw v2 (git main data/mp3_v2/, 10 段新生成)
+    - 浏览器直接 GET, 不走 streamlit cloud 代理 (避免 ERR_CONNECTION_RESET)
     """
     chinese_name = f"{place}_{mood}.mp3"
-    # FILENAME_MAP 直接给 ASCII (v1 真实拼写, e.g. ouxiangxie_chensi.mp3)
     asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
 
-    # 1. 尝试 v1 release (ASCII, 36 段全有)
+    # 1. v1 release (ASCII 直拼)
     url_v1 = f"{RELEASE_BASE}/{asset_name}"
-    if _try_fetch_to_tmp(url_v1, place, mood):
-        return _last_tmp_path
-    # 2. fallback v2 (raw GitHub, ASCII + _v2 后缀, e.g. ouxxiangxie_chensi_v2.mp3)
+    if _url_alive(url_v1):
+        return url_v1
+    # 2. v2 raw (ASCII + _v2)
     v2_name = asset_name.replace(".mp3", "_v2.mp3")
     url_v2 = f"{RAW_V2_BASE}/{v2_name}"
-    if _try_fetch_to_tmp(url_v2, place, mood):
-        return _last_tmp_path
-    st.error(f"加载音乐失败: v1 v2 都不可用 ({place}_{mood})")
+    if _url_alive(url_v2):
+        return url_v2
     return None
 
 
-_last_tmp_path: str | None = None
-
-
-def _try_fetch_to_tmp(url: str, place: str, mood: str) -> bool:
-    """下载到临时文件, 成功返回 True 并存 _last_tmp_path, 失败返回 False"""
-    global _last_tmp_path
+def _url_alive(url: str) -> bool:
+    """HEAD 请求检测 URL 是否 200 (mp3 真存在)"""
     try:
-        resp = requests.get(url, timeout=60, stream=True)
-        resp.raise_for_status()
-        tmp = tempfile.NamedTemporaryFile(
-            suffix=".mp3", prefix=f"treehole_{place}_{mood}_", delete=False
-        )
-        for chunk in resp.iter_content(chunk_size=65536):
-            tmp.write(chunk)
-        tmp.close()
-        _last_tmp_path = tmp.name
-        return True
+        r = requests.head(url, timeout=15, allow_redirects=True)
+        return r.status_code == 200
     except Exception:
         return False
 
@@ -247,8 +228,8 @@ if has_context:
 """, unsafe_allow_html=True)
 
     # 直接播放推荐音乐
-    rec_path = get_audio_file(rec_scene, rec_mood)
-    if rec_path:
+    rec_url = get_audio_url(rec_scene, rec_mood)
+    if rec_url:
         st.markdown(f"""
 <div class="card" style="text-align:center;">
     <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎶</div>
@@ -256,15 +237,8 @@ if has_context:
     <p style="font-size: 0.8rem; color: #8b7355;">AI 专属生成</p>
 </div>
 """, unsafe_allow_html=True)
-        st.audio(rec_path, format="audio/mp3")
-        with open(rec_path, "rb") as f:
-            st.download_button(
-                label="📥 下载推荐音乐",
-                data=f,
-                file_name=f"{rec_scene}_{rec_mood}.mp3",
-                mime="audio/mpeg",
-                use_container_width=True,
-            )
+        st.audio(rec_url, format="audio/mp3")
+        st.markdown(f"[📥 下载推荐音乐]({rec_url})")
 
     st.markdown("""
 <div style="text-align:center; margin: 0.8rem 0;">
@@ -286,7 +260,7 @@ with col2:
     )
 
 # ── 播放 ──
-audio_path = get_audio_file(place, mood)
+audio_url = get_audio_url(place, mood)
 chinese_name = f"{place}_{mood}.mp3"
 
 st.markdown(f"""
@@ -297,16 +271,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-if audio_path:
-    st.audio(audio_path, format="audio/mp3")
-    with open(audio_path, "rb") as f:
-        st.download_button(
-            label="📥 下载音乐",
-            data=f,
-            file_name=chinese_name,
-            mime="audio/mpeg",
-            use_container_width=True,
-        )
+if audio_url:
+    st.audio(audio_url, format="audio/mp3")
+    st.markdown(f"[📥 下载音乐]({audio_url})")
 else:
     st.warning("音乐加载失败，请检查网络后重试。")
 
@@ -325,6 +292,6 @@ for scene in MUSIC_PLACES:
             with col1:
                 st.write(f"  {emotion}")
             with col2:
-                path = get_audio_file(scene, emotion)
-                if path:
-                    st.audio(path, format="audio/mp3")
+                url = get_audio_url(scene, emotion)
+                if url:
+                    st.audio(url, format="audio/mp3")
