@@ -24,7 +24,7 @@ from core.styles import inject_css; inject_css()
 RELEASE_BASE = "https://github.com/dechang64/dgy-treehole/releases/download/v1.0-music"
 
 # v2 fallback — raw GitHub (mp3 直接 commit 进 repo, 10 段 v1 太短/缺失的备选)
-# 命名规则: {scene_ascii}_{mood_ascii}_v2.mp3 (ouxxiangxie 双 x, 跟 git 一致)
+# 命名规则: {scene_ascii}_{mood_ascii}_v2.mp3 (ouxiangxie 1 x, 跟 git + v1 release 一致)
 RAW_V2_BASE = "https://raw.githubusercontent.com/dechang64/dgy-treehole/main/data/mp3_v2"
 
 FILENAME_MAP = {
@@ -52,12 +52,12 @@ FILENAME_MAP = {
     "稻香村_沉思.mp3": "daoxiangcun_chensi.mp3",
     "稻香村_疗愈.mp3": "daoxiangcun_liaoyu.mp3",
     "稻香村_释然.mp3": "daoxiangcun_shiran.mp3",
-    "藕香榭_宁静.mp3": "ouxxiangxie_ningjing.mp3",
-    "藕香榭_思念.mp3": "ouxxiangxie_sinian.mp3",
-    "藕香榭_欢愉.mp3": "ouxxiangxie_huanyu.mp3",
-    "藕香榭_沉思.mp3": "ouxxiangxie_chensi.mp3",
-    "藕香榭_疗愈.mp3": "ouxxiangxie_liaoyu.mp3",
-    "藕香榭_释然.mp3": "ouxxiangxie_shiran.mp3",
+    "藕香榭_宁静.mp3": "ouxiangxie_ningjing.mp3",
+    "藕香榭_思念.mp3": "ouxiangxie_sinian.mp3",
+    "藕香榭_欢愉.mp3": "ouxiangxie_huanyu.mp3",
+    "藕香榭_沉思.mp3": "ouxiangxie_chensi.mp3",
+    "藕香榭_疗愈.mp3": "ouxiangxie_liaoyu.mp3",
+    "藕香榭_释然.mp3": "ouxiangxie_shiran.mp3",
     "秋爽斋_宁静.mp3": "qiushuangzhai_ningjing.mp3",
     "秋爽斋_思念.mp3": "qiushuangzhai_sinian.mp3",
     "秋爽斋_欢愉.mp3": "qiushuangzhai_huanyu.mp3",
