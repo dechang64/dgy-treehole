@@ -11,6 +11,7 @@
 import streamlit as st
 import requests
 import tempfile
+from urllib.parse import quote
 from core.config import (
     MUSIC_PLACES, MUSIC_MOODS, MBTI_PARAMS, ELEM_PARAMS,
     EMOTION_MUSIC_MAP, MUSIC_MOOD_MUSIC_MAP,
@@ -20,7 +21,8 @@ from core.emotion_detector import compute_session_emotion_profile
 st.set_page_config(page_title="疗愈音乐 · 大观园树洞", page_icon="🎵", layout="centered")
 from core.styles import inject_css; inject_css()
 
-# GitHub Release — Release API 不支持中文字符名，用 ASCII 资源名
+# GitHub Release — Release API 实际资产名 = 中文 (从 release page 抓取的 sha256 list 看)
+# 例: 蘅芜苑_沉思.mp3, 稻香村_沉思.mp3, 藕香榭_沉思.mp3 ...
 RELEASE_BASE = "https://github.com/dechang64/dgy-treehole/releases/download/v1.0-music"
 
 # v2 fallback — raw GitHub (mp3 直接 commit 进 repo, 缺失/太短 10 段)
@@ -52,12 +54,12 @@ FILENAME_MAP = {
     "稻香村_沉思.mp3": "daoxiangcun_chensi.mp3",
     "稻香村_疗愈.mp3": "daoxiangcun_liaoyu.mp3",
     "稻香村_释然.mp3": "daoxiangcun_shiran.mp3",
-    "藕香榭_宁静.mp3": "ouxiangxie_ningjing.mp3",
-    "藕香榭_思念.mp3": "ouxiangxie_sinian.mp3",
-    "藕香榭_欢愉.mp3": "ouxiangxie_huanyu.mp3",
-    "藕香榭_沉思.mp3": "ouxiangxie_chensi.mp3",
-    "藕香榭_疗愈.mp3": "ouxiangxie_liaoyu.mp3",
-    "藕香榭_释然.mp3": "ouxiangxie_shiran.mp3",
+    "藕香榭_宁静.mp3": "ouxxiangxie_ningjing.mp3",
+    "藕香榭_思念.mp3": "ouxxiangxie_sinian.mp3",
+    "藕香榭_欢愉.mp3": "ouxxiangxie_huanyu.mp3",
+    "藕香榭_沉思.mp3": "ouxxiangxie_chensi.mp3",
+    "藕香榭_疗愈.mp3": "ouxxiangxie_liaoyu.mp3",
+    "藕香榭_释然.mp3": "ouxxiangxie_shiran.mp3",
     "秋爽斋_宁静.mp3": "qiushuangzhai_ningjing.mp3",
     "秋爽斋_思念.mp3": "qiushuangzhai_sinian.mp3",
     "秋爽斋_欢愉.mp3": "qiushuangzhai_huanyu.mp3",
@@ -166,19 +168,19 @@ def get_audio_file(place: str, mood: str) -> str | None:
     改为每次重新下载，mp3 普遍 < 1MB，用户冷流 < 5s。
 
     v6.4.4 策略:
-    1. 优先 GitHub Release v1.0-music (v1 资源)
-    2. v1 404 时, 自动回退 raw GitHub v2 (10 段新生成, commit 进 repo)
-    3. 命名: {scene_ascii}_{mood_ascii}_v2.mp3
+    1. 优先 GitHub Release v1.0-music (36 段全有, 中文名)
+    2. v1 404 时, 自动回退 raw GitHub v2 (10 段新生成, commit 进 repo, ASCII 名)
+    3. v1 名 = {place}_{mood}.mp3 (中文), v2 名 = {ascii}_{ascii}_v2.mp3
     """
     chinese_name = f"{place}_{mood}.mp3"
-    asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
 
-    # 1. 尝试 v1 release
-    url_v1 = f"{RELEASE_BASE}/{asset_name}"
+    # 1. 尝试 v1 release (中文名, 36 段全有)
+    url_v1 = f"{RELEASE_BASE}/{quote(chinese_name)}"
     if _try_fetch_to_tmp(url_v1, place, mood):
         return _last_tmp_path
-    # 2. fallback v2 (raw GitHub)
-    v2_name = asset_name.replace(".mp3", "_v2.mp3")
+    # 2. fallback v2 (raw GitHub, ASCII 名)
+    ascii_name = FILENAME_MAP.get(chinese_name, chinese_name)
+    v2_name = ascii_name.replace(".mp3", "_v2.mp3")
     url_v2 = f"{RAW_V2_BASE}/{v2_name}"
     if _try_fetch_to_tmp(url_v2, place, mood):
         return _last_tmp_path
