@@ -11,7 +11,6 @@
 import streamlit as st
 import requests
 import tempfile
-from urllib.parse import quote
 from core.config import (
     MUSIC_PLACES, MUSIC_MOODS, MBTI_PARAMS, ELEM_PARAMS,
     EMOTION_MUSIC_MAP, MUSIC_MOOD_MUSIC_MAP,
