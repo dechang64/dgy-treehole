@@ -161,31 +161,44 @@ def get_smart_recommendation():
 def get_audio_url(place: str, mood: str) -> str | None:
     """返回 mp3 的可访问 URL (浏览器直下, 跳过 streamlit cloud 代理).
 
-    v6.4.7 策略: 不用 tempfile 也不用 streamlit media proxy, 直接返回 URL.
-    - 优先 v1 release (GitHub Releases CDN, 36 段全有)
-    - fallback raw v2 (git main data/mp3_v2/, 10 段新生成)
+    v6.4.9 策略: 不用 tempfile 也不用 streamlit media proxy, 直接返回 URL.
+    - 优先 v1 release (GitHub Releases CDN, 36 段全有) 但仅当 ≥ 120s
+    - v1 < 120s (太短) 时, fallback raw v2 (新生成, 9/10 段 ≥ 2:00)
     - 浏览器直接 GET, 不走 streamlit cloud 代理 (避免 ERR_CONNECTION_RESET)
     """
     chinese_name = f"{place}_{mood}.mp3"
     asset_name = FILENAME_MAP.get(chinese_name, chinese_name)
 
-    # 1. v1 release (ASCII 直拼)
+    # 1. v1 release (ASCII 直拼) - 短 < 120s 视为不可用
     url_v1 = f"{RELEASE_BASE}/{asset_name}"
-    if _url_alive(url_v1):
+    if _url_long_enough(url_v1, min_seconds=120):
         return url_v1
     # 2. v2 raw (ASCII + _v2)
     v2_name = asset_name.replace(".mp3", "_v2.mp3")
     url_v2 = f"{RAW_V2_BASE}/{v2_name}"
-    if _url_alive(url_v2):
+    if _url_long_enough(url_v2, min_seconds=0):  # v2 存在就用
         return url_v2
     return None
 
 
-def _url_alive(url: str) -> bool:
-    """HEAD 请求检测 URL 是否 200 (mp3 真存在)"""
+def _url_long_enough(url: str, min_seconds: int) -> bool:
+    """HEAD + Content-Length 估算时长 (mp3 bitrate ~128kbps).
+
+    实测 v1 release size 分布:
+    - < 1.7 MB: 2 段太短 (longcuian_liaoyu / _.mp3, < 90s)
+    - 1.7-2.5 MB: 3 段偏短 (90-130s)
+    - >= 2.5 MB: 54 段正常 (>= 130s)
+
+    阈值 2.5 MB ≈ 130s, 把 5 段短 mp3 排除, 走 v2 fallback
+    """
     try:
         r = requests.head(url, timeout=15, allow_redirects=True)
-        return r.status_code == 200
+        if r.status_code != 200:
+            return False
+        if min_seconds == 0:
+            return True
+        size = int(r.headers.get("Content-Length", 0))
+        return size >= 2_500_000
     except Exception:
         return False
 
