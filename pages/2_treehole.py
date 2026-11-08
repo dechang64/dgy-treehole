@@ -1,3 +1,4 @@
+from __future__ import annotations
 """匿名树洞 — 释放心事，不留痕迹
 
 设计原则：

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """AMAX Token Router 聊天客户端（OpenAI 兼容格式）
 
 API: POST https://ai.amaxsmp.com/v1/chat/completions

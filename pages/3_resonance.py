@@ -1,3 +1,4 @@
+from __future__ import annotations
 """匿名共鸣 — 真实匿名社交（track-3 重做版）
 
 5 个 Tab：
